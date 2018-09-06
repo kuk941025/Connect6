@@ -44,3 +44,5 @@ public:
 		memset(gBoard, 0, sizeof(gBoard));
 	}
 };
+
+extern Connect6 c;

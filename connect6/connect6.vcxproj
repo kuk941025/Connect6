@@ -114,11 +114,13 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="ai_sourcefile.cpp" />
     <ClCompile Include="consoleAPI.cpp" />
     <ClCompile Include="gameboard.cpp" />
     <ClCompile Include="main.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="ai_sourcefile.h" />
     <ClInclude Include="consoleAPI.h" />
     <ClInclude Include="gameboard.h" />
   </ItemGroup>

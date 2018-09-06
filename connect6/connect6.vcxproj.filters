@@ -24,12 +24,18 @@
     <ClCompile Include="gameboard.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
+    <ClCompile Include="ai_sourcefile.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="gameboard.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
     <ClInclude Include="consoleAPI.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="ai_sourcefile.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
   </ItemGroup>
