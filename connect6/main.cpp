@@ -12,7 +12,7 @@ StoneCOORD random_ai() {
 		do {
 			y = rand() % BOARD_SIZE;
 			x = rand() % BOARD_SIZE;
-		} while (!c.isOccupied(y, x));
+		} while (!c.isFree(y, x));
 		if (i == 0) {
 			rtr.x1 = x; rtr.y1 = y;
 		}

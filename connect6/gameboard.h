@@ -30,7 +30,7 @@ private:
 	void switch_stone();
 	int place_stone(int y, int x, bool show);
 public:
-	int isOccupied(int y, int x);
+	int isFree(int y, int x);
 	void init();
 	void play_connect6();
 	void set_blackAI(StoneCOORD(*ai)());

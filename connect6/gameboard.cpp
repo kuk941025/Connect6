@@ -215,7 +215,7 @@ int Connect6::place_stone(int y, int x, bool show) {
 
 }
 
-int Connect6::isOccupied(int y, int x) {
+int Connect6::isFree(int y, int x) {
 	if (gBoard[y][x] == 0) return 1;
 	else return 0;
 }
