@@ -1,6 +1,8 @@
 #include "gameboard.h"
-#include "consoleAPI.h"
+#include "ai_sourcefile.h"
 #include <iostream>
+#include <stdlib.h>
+#include <time.h>
 
 using namespace std;
 
@@ -64,6 +66,9 @@ int Connect6::get_numStones() {
 	return numStones;
 }
 
+int Connect6::showBoard(int x, int y) {
+	return gBoard[y][x];
+}
 void Connect6::notify_stone() {
 	clear_message();
 	MoveCursor(message_crd.X, message_crd.Y);
@@ -76,10 +81,24 @@ void Connect6::notify_stone() {
 void Connect6::init() {
 	this->connect_num = CONNECT_NUMBER;
 	this->remaining_spaces = BOARD_SIZE * BOARD_SIZE;
+	memset(gBoard, 0, sizeof(gBoard));
+	if (generate_blocking) {
+		srand(time(NULL));
+		int blocks = rand() % 8;
+		for (int i = 0; i < blocks; i++) {
+			int rand_y, rand_x;
+			do {
+				rand_y = rand() % BOARD_SIZE;
+				rand_x = rand() % BOARD_SIZE;
+			} while (!isFree(rand_y, rand_x));
+			gBoard[rand_y][rand_x] = STONE_BLOCK;
+		}
+	}
 }
 void Connect6::play_connect6() {
 	show_gBoard();
 	int x1, x2,  y1, y2;
+	x2 = y2 = 0;
 	numStones = 1;
 	while (1) {
 		if ((stone_type == STONE_BLACK && !isBlackAI) || (stone_type == STONE_WHITE && !isWhiteAI)) {
@@ -89,10 +108,30 @@ void Connect6::play_connect6() {
 				while (1) {
 					if (i == 0) {
 						cin >> x1 >> y1;
+						if (x1 == -1 && y1 == -1) {
+							relevanceZone re = getRelevanceZone(gBoard);
+							clear_message();
+							for (int i = 0; i < BOARD_SIZE; i++) {
+								for (int j = 0; j < BOARD_SIZE; j++) {
+									cout << re.board[i][j] << "  ";
+								}
+								cout << "\n";
+							}
+						}
 						if (place_stone(y1, x1, true)) break;
 					}
 					else {
 						cin >> x2 >> y2;
+						if (x2 == -1 && y2 == -1) {
+							relevanceZone re = getRelevanceZone(gBoard);
+							clear_message();
+							for (int i = 0; i < BOARD_SIZE; i++) {
+								for (int j = 0; j < BOARD_SIZE; j++) {
+									cout << re.board[i][j] << "  ";
+								}
+								cout << "\n";
+							}
+						}
 						if (place_stone(y2, x2, true)) break;
 					}
 				}
@@ -133,14 +172,18 @@ void Connect6::play_connect6() {
 		numStones = 2;
 	}
 }
+
+void Connect6::set_blocking(bool block) {
+	this->generate_blocking = block;
+}
 void Connect6::simulate(StoneCOORD(*aiBlack)(), StoneCOORD(*aiWhite)(), int turns) {
-	StoneCOORD black, white, stone_crd;
+	StoneCOORD stone_crd;
 	int black_wins, white_wins, ties;
 	numStones = 1;
 	black_wins = white_wins = ties = 0;
 	while (turns--) {
 		init();
-		memset(gBoard, 0, sizeof(gBoard));
+		
 		cout << turns << "\r";
 		while (1) {
 			if (stone_type == STONE_BLACK) {
@@ -224,8 +267,9 @@ void Connect6::show_gBoard() {
 	for (int i = 0; i < board_size; i++) {
 		for (int j = 0; j < board_size; j++) {
 			if (gBoard[i][j] == 0) cout << ". ";
-			else if (gBoard[i][j] == 1) cout << "O ";
-			else if (gBoard[i][j] == 2) cout << "X ";
+			else if (gBoard[i][j] == STONE_BLACK) cout << "O ";
+			else if (gBoard[i][j] == STONE_WHITE) cout << "X ";
+			else if (gBoard[i][j] == STONE_BLOCK) cout << "* ";
 		}
 		cout << "\n";
 	}

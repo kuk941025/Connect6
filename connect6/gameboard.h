@@ -4,6 +4,7 @@
 #define BOARD_SIZE 19
 #define STONE_BLACK 1
 #define STONE_WHITE 2
+#define STONE_BLOCK 3
 #define PLAY_TYPE_USER 1
 #define PLAY_TYPE_AI 2
 #define CONNECT_NUMBER 6
@@ -16,7 +17,7 @@ struct StoneCOORD {
 class Connect6 {
 private:
 	int stone_type, play_type[2], numStones;
-	bool isBlackAI, isWhiteAI;
+	bool isBlackAI, isWhiteAI, generate_blocking;
 	int gBoard[BOARD_SIZE][BOARD_SIZE] = { 0 };
 	int connect_num, remaining_spaces;
 	StoneCOORD(*black_ai)(), (*white_ai)();
@@ -32,16 +33,19 @@ private:
 public:
 	int isFree(int y, int x);
 	void init();
+	void set_blocking(bool blocking);
 	void play_connect6();
 	void set_blackAI(StoneCOORD(*ai)());
 	void set_whiteAI(StoneCOORD(*ai)());
 	void simulate(StoneCOORD(*aiBlack)(), StoneCOORD(*aiWhite)(), int turns);
 	int get_numStones();
+	int showBoard(int x, int y);
 	Connect6(bool _isBlackAI, bool _isWhiteAI) {
 		isBlackAI = _isBlackAI;
 		isWhiteAI = _isWhiteAI;
+		generate_blocking = false;
 		stone_type = STONE_BLACK;
-		memset(gBoard, 0, sizeof(gBoard));
+		
 	}
 };
 

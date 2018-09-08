@@ -118,11 +118,13 @@
     <ClCompile Include="consoleAPI.cpp" />
     <ClCompile Include="gameboard.cpp" />
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="mandeuk.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="ai_sourcefile.h" />
     <ClInclude Include="consoleAPI.h" />
     <ClInclude Include="gameboard.h" />
+    <ClInclude Include="mandeuk.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
