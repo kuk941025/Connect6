@@ -14,10 +14,12 @@ int Connect6::check_connect6(int last_y, int last_x) {
 	
 	//horizontal check
 	cnt = 0;
-	while (gBoard[y][x - 1] == stone_type && x >= 0)
+	while ((gBoard[y][x - 1] == stone_type || gBoard[y][x - 1] == STONE_BLOCK) && x >= 0)
 		x--;
-	while (gBoard[y][x++] == stone_type && x < board_size)
+	while ((gBoard[y][x] == stone_type || gBoard[y][x] == STONE_BLOCK) && x < board_size) {
 		cnt++;
+		x++;
+	}
 	
 	if (cnt == connect_num) 
 		return 1;
@@ -25,10 +27,12 @@ int Connect6::check_connect6(int last_y, int last_x) {
 	//vertical check
 	cnt = 0;
 	y = last_y; x = last_x;
-	while (gBoard[y - 1][x] == stone_type && y >= 0)
+	while ((gBoard[y - 1][x] == stone_type || gBoard[y - 1][x] == STONE_BLOCK) && y >= 0)
 		y--;
-	while (gBoard[y++][x] == stone_type && y < board_size)
+	while ((gBoard[y][x] == stone_type || gBoard[y][x] == STONE_BLOCK) && y < board_size) {
 		cnt++;
+		y++;
+	}
 
 	if (cnt == connect_num) 
 		return 1;
@@ -36,12 +40,14 @@ int Connect6::check_connect6(int last_y, int last_x) {
 	//diagonal bottom right
 	cnt = 0;
 	y = last_y; x = last_x;
-	while (gBoard[y - 1][x - 1] == stone_type && x >= 0 && y >= 0) {
+	while ((gBoard[y - 1][x - 1] == stone_type || gBoard[y - 1][x - 1] == STONE_BLOCK) && x >= 0 && y >= 0) {
 		y--;
 		x--;
 	}
-	while (gBoard[y++][x++] == stone_type && x < board_size && y < board_size)
+	while ((gBoard[y][x] == stone_type || gBoard[y][x] == STONE_BLOCK) && x < board_size && y < board_size) {
 		cnt++;
+		y++; x++;
+	}
 
 	if (cnt == connect_num)
 		return 1;
@@ -49,12 +55,14 @@ int Connect6::check_connect6(int last_y, int last_x) {
 	//diagonal bottom left
 	cnt = 0;
 	y = last_y; x = last_x;
-	while (gBoard[y - 1][x + 1] == stone_type && x >= 0 && y >= 0) {
+	while ((gBoard[y - 1][x + 1] == stone_type || gBoard[y - 1][x + 1] == STONE_BLOCK )&& x >= 0 && y >= 0) {
 		y--;
 		x++;
 	}
-	while (gBoard[y++][x--] == stone_type && x < board_size && y < board_size)
+	while ((gBoard[y][x] == stone_type || gBoard[y][x] == STONE_BLOCK) && x < board_size && y < board_size) {
 		cnt++;
+		y++; x--;
+	}
 
 	if (cnt == connect_num)
 		return 1;
@@ -67,7 +75,13 @@ int Connect6::get_numStones() {
 }
 
 int Connect6::showBoard(int x, int y) {
-	return gBoard[y][x];
+	//opponent stone is represented as 2
+	if (stone_type == STONE_BLACK)	return gBoard[y][x];
+	else {
+		if (gBoard[y][x] == STONE_BLACK) return STONE_WHITE;
+		else if (gBoard[y][x] == STONE_WHITE) return STONE_BLACK;
+		else return gBoard[y][x];
+	}
 }
 void Connect6::notify_stone() {
 	clear_message();
@@ -113,7 +127,10 @@ void Connect6::play_connect6() {
 							clear_message();
 							for (int i = 0; i < BOARD_SIZE; i++) {
 								for (int j = 0; j < BOARD_SIZE; j++) {
-									cout << re.board[i][j] << "  ";
+									for (int k = 1; k <= 2; k++) {
+										if (k == 1) cout << re.board[i][j][k] << ",";
+										else cout << re.board[i][j][k] << " ";
+									}
 								}
 								cout << "\n";
 							}
@@ -127,7 +144,10 @@ void Connect6::play_connect6() {
 							clear_message();
 							for (int i = 0; i < BOARD_SIZE; i++) {
 								for (int j = 0; j < BOARD_SIZE; j++) {
-									cout << re.board[i][j] << "  ";
+									for (int k = 1; k <= 2; k++) {
+										if (k == 1) cout << re.board[i][j][k] << ",";
+										else cout << re.board[i][j][k] << " ";
+									}
 								}
 								cout << "\n";
 							}
@@ -146,10 +166,13 @@ void Connect6::play_connect6() {
 			else {
 				res = white_ai();
 			}
-			place_stone(res.y1, res.x1, true);
-			place_stone(res.y2, res.x2, true);
-			x1 = res.x1; y1 = res.y1;
-			x2 = res.x2; y2 = res.y2;
+			if (place_stone(res.y1, res.x1, true)) {
+				x1 = res.x1; y1 = res.y1;
+			}
+			if (place_stone(res.y2, res.x2, true)) {
+				x2 = res.x2; y2 = res.y2;
+			}
+			
 		}
 
 		if (check_connect6(y1, x1) || check_connect6(y2, x2)) {

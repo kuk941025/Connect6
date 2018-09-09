@@ -1,5 +1,5 @@
 #pragma once
-#define INF 123456789;
+#define INF 1000000;
 
 #include "gameboard.h"
 #include <queue>
@@ -16,11 +16,11 @@ struct cmp {
 };
 
 struct relevanceZone {
-	priority_queue<coordInfo, vector<coordInfo>, cmp> pq;
-	int board[BOARD_SIZE][BOARD_SIZE];
+	priority_queue<coordInfo, vector<coordInfo>, cmp> pq, whiteP, blackP;
+	int board[BOARD_SIZE][BOARD_SIZE][3];
 };
 
 StoneCOORD random_ai();
-void minimax(int gBoard[BOARD_SIZE][BOARD_SIZE], int depth, int alpha, int beta, bool max);
+int minimax (int gBoard[BOARD_SIZE][BOARD_SIZE] , relevanceZone zone, int depth, int alpha, int beta, bool max);
 relevanceZone getRelevanceZone(int gBoard[BOARD_SIZE][BOARD_SIZE]);
 StoneCOORD mansoon();
