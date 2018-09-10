@@ -109,6 +109,7 @@ void Connect6::init() {
 			} while (!isFree(rand_y, rand_x));
 			gBoard[rand_y][rand_x] = STONE_BLOCK;
 		}
+		gBoard[8][8] = STONE_BLOCK;
 	}
 }
 
@@ -161,13 +162,15 @@ COORD Connect6::get_userinput() {
 					for (int j = 0; j < BOARD_SIZE; j++) {
 						for (int k = 1; k <= 2; k++) {
 							if (k == 1) cout << re.board[i][j][k] << ", ";
-							else cout <<  re.board[i][j][k] << "  ";
+							else cout << re.board[i][j][k] << "  ";
 						}
 					}
 					cout << "\n";
 				}
 				MoveCursor(cur_pos.X, cur_pos.Y);
 			}
+			else if (key == KEY_K)
+				switch_stone();
 
 		}
 	}
@@ -178,7 +181,7 @@ void Connect6::play_connect6() {
 	COORD userInput;
 	x2 = y2 = 0;
 	numStones = 1;
-	while (1) {
+	while (1) {	
 		if ((stone_type == STONE_BLACK && !isBlackAI) || (stone_type == STONE_WHITE && !isWhiteAI)) {
 			//user is playing
 			for (int i = 0; i < numStones; i++) {
@@ -186,28 +189,6 @@ void Connect6::play_connect6() {
 				while (1) {
 					if (i == 0) {
 						userInput = get_userinput();
-						//cin >> x1 >> y1;
-
-						//if (x1 == -1 && y1 == -1) {
-						//	relevanceZone re = getRelevanceZone(gBoard);
-						//	clear_message();
-						//	for (int i = 0; i < BOARD_SIZE; i++) {
-						//		for (int j = 0; j < BOARD_SIZE; j++) {
-						//			for (int k = 1; k <= 2; k++) {
-						//				if (k == 1) cout << re.board[i][j][k] << ",";
-						//				else cout << re.board[i][j][k] << " ";
-						//			}
-						//		}
-						//		cout << "\n";
-						//	}
-						//	for (int i = 0; i < BOARD_SIZE; i++) {
-						//		for (int j = 0; j < BOARD_SIZE; j++) {
-						//			cout << re.board[i][j][1] + re.board[i][j][2] + re.board[i][j][3] << "  ";
-						//		}
-						//		cout << "\n";
-						//	}
-						//}
-						
 						x1 = userInput.X;
 						y1 = userInput.Y;
 						if (place_stone(y1, x1, true)) { 
@@ -217,27 +198,7 @@ void Connect6::play_connect6() {
 						}
 					}
 					else {
-						/*cin >> x2 >> y2;
-						if (x2 == -1 && y2 == -1) {
-							relevanceZone re = getRelevanceZone(gBoard);
-							clear_message();
-							for (int i = 0; i < BOARD_SIZE; i++) {
-								for (int j = 0; j < BOARD_SIZE; j++) {
-									for (int k = 1; k <= 2; k++) {
-										if (k == 1) cout << re.board[i][j][k] << ",";
-										else cout << re.board[i][j][k] << " ";
-									}
-								}
-								cout << "\n";
-							}
 
-							for (int i = 0; i < BOARD_SIZE; i++) {
-								for (int j = 0; j < BOARD_SIZE; j++) {
-									cout << re.board[i][j][1] + re.board[i][j][2] + re.board[i][j][3] << "  ";
-								}
-								cout << "\n";
-							}
-						}*/
 						userInput = get_userinput();
 						x2 = userInput.X;
 						y2 = userInput.Y;

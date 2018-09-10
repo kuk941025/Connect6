@@ -1,7 +1,7 @@
 #pragma once
 #define INF 10000000
 #define DEPTH_LVL 4
-
+#define THREAT 100
 #include "gameboard.h"
 #include <queue>
 #include <algorithm>

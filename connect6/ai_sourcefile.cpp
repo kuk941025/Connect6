@@ -98,9 +98,16 @@ StoneCOORD locate_center(int gameboard[BOARD_SIZE][BOARD_SIZE]) {
 }
 
 relevanceZone getRelevanceZone(int gBoard[BOARD_SIZE][BOARD_SIZE]) {
+	//the function searches relevance area and threat zones where four connections are made
 	relevanceZone z;
 	memset(z.board, 0, sizeof(z.board));
 	int zone_length = 3;
+	int temp_board[BOARD_SIZE][BOARD_SIZE];
+	for (int i = 0; i < BOARD_SIZE; i++)
+		for (int j = 0; j < BOARD_SIZE; j++)
+			temp_board[i][j] = gBoard[i][j];
+
+
 	for (int i = 0; i < BOARD_SIZE; i++) {
 		for (int j = 0; j < BOARD_SIZE; j++) {
 			if (gBoard[i][j] != 0) { 
@@ -118,9 +125,19 @@ relevanceZone getRelevanceZone(int gBoard[BOARD_SIZE][BOARD_SIZE]) {
 					if (cur_x1 >= 0 && cur_x1 < BOARD_SIZE ) {
 						if (gBoard[y][cur_x1] == 0) z.board[y][cur_x1][cur_stone] += priority;
 						else {
-							int copy_x = cur_x1;
-							for (; copy_x < BOARD_SIZE && (gBoard[y][copy_x] == cur_stone || gBoard[y][copy_x] == STONE_BLOCK) ; copy_x++);
-							if (gBoard[y][copy_x] == 0) z.board[y][copy_x][cur_stone] += priority;
+							int copy_x = cur_x1, cnt = 1;
+							int temp_stone; //to allow blocking to be in relevant zone calculations.
+							if (cur_stone == STONE_BLOCK) temp_stone = gBoard[y][copy_x];
+							else temp_stone = cur_stone;
+
+							for (; copy_x + 1 < BOARD_SIZE && (gBoard[y][copy_x] == temp_stone || gBoard[y][copy_x] == 3) ; copy_x++, cnt++);
+							if (gBoard[y][copy_x] == 0) z.board[y][copy_x][temp_stone] += priority;
+
+							//threat zone search
+							if (cnt >= 4 && gBoard[y][copy_x] == 0) {
+									z.board[y][copy_x][temp_stone] += THREAT;
+								
+							}
 						}
 					}
 					
@@ -128,13 +145,22 @@ relevanceZone getRelevanceZone(int gBoard[BOARD_SIZE][BOARD_SIZE]) {
 					if (cur_x2 >= 0 && cur_x2 < BOARD_SIZE) {
 						if (gBoard[y][cur_x2] == 0) z.board[y][cur_x2][cur_stone] += priority;
 						else {
-							int copy_x = cur_x2;
-							for (; copy_x >= 0 && (gBoard[y][copy_x] == cur_stone || gBoard[y][copy_x] == STONE_BLOCK); copy_x--);
-							if (gBoard[y][copy_x] == 0) z.board[y][copy_x][cur_stone] += priority;
+							int copy_x = cur_x2, cnt = 1;
+							int temp_stone;
+							if (cur_stone == STONE_BLOCK) temp_stone = gBoard[y][copy_x];
+							else temp_stone = cur_stone;
+
+							for (; copy_x - 1 >= 0 && (gBoard[y][copy_x] == temp_stone|| gBoard[y][copy_x] == STONE_BLOCK); copy_x--, cnt++);
+							if (gBoard[y][copy_x] == 0) z.board[y][copy_x][temp_stone] += priority;
+							if (cnt >= 4 && gBoard[y][copy_x] == 0) {
+
+									z.board[y][copy_x][temp_stone] += THREAT;
+
+							}
 						}
 						
 					}
-
+					
 					priority--;
 				}
 
@@ -146,25 +172,34 @@ relevanceZone getRelevanceZone(int gBoard[BOARD_SIZE][BOARD_SIZE]) {
 					if (cur_y1 >= 0 && cur_y1 < BOARD_SIZE) {
 						if (gBoard[cur_y1][x] == 0) z.board[cur_y1][x][cur_stone] += priority;
 						else {
-							int copy_y = cur_y1;
-							for (; copy_y < BOARD_SIZE && (gBoard[copy_y][x] == cur_stone || gBoard[copy_y][x] == STONE_BLOCK); copy_y++);
-							if (gBoard[copy_y][x] == 0) z.board[copy_y][x][cur_stone] += priority;
+							int copy_y = cur_y1, cnt = 1;
+							int temp_stone;
+							if (cur_stone == STONE_BLOCK) temp_stone = gBoard[copy_y][x];
+							else temp_stone = cur_stone;
+
+							for (; copy_y + 1 < BOARD_SIZE && (gBoard[copy_y][x] == temp_stone || gBoard[copy_y][x] == STONE_BLOCK); copy_y++, cnt++);
+							if (gBoard[copy_y][x] == 0) z.board[copy_y][x][temp_stone] += priority;
+							if (cnt >= 4 && gBoard[copy_y][x] == 0) z.board[copy_y][x][temp_stone] += THREAT;
 						}
 
 					}
 					if (cur_y2 >= 0 && cur_y1 < BOARD_SIZE) {
 						if (gBoard[cur_y2][x] == 0) z.board[cur_y2][x][cur_stone] += priority;
 						else {
-							int copy_y = cur_y2;
-							for (; copy_y >= 0 && (gBoard[copy_y][x] == cur_stone || gBoard[copy_y][x] == STONE_BLOCK); copy_y--);
-							if (gBoard[copy_y][x] == 0) z.board[copy_y][x][cur_stone] += priority;
+							int copy_y = cur_y2, cnt = 1;
+							int temp_stone;
+							if (cur_stone == STONE_BLOCK) temp_stone = gBoard[copy_y][x];
+							else temp_stone = cur_stone;
+
+							for (; copy_y - 1 >= 0 && (gBoard[copy_y][x] == temp_stone || gBoard[copy_y][x] == STONE_BLOCK); copy_y--, cnt++);
+							if (gBoard[copy_y][x] == 0) z.board[copy_y][x][temp_stone] += priority;
+							if (cnt >= 4 && gBoard[copy_y][x] == 0) z.board[copy_y][x][temp_stone] += THREAT;
 						}
 		
 					}
 
 					priority--;
 				}
-
 				//diagonal right down
 				priority = zone_length;
 				for (int cnt = 1; cnt <= zone_length; cnt++) {
@@ -175,20 +210,32 @@ relevanceZone getRelevanceZone(int gBoard[BOARD_SIZE][BOARD_SIZE]) {
 					if (cur_x1 >= 0 && cur_y1 >= 0 && cur_x1 < BOARD_SIZE && cur_y1 < BOARD_SIZE) {
 						if (gBoard[cur_y1][cur_x1] == 0) z.board[cur_y1][cur_x1][cur_stone] += priority;
 						else {
-							int copy_x, copy_y;
+							int copy_x, copy_y, cnt = 1;
 							copy_x = cur_x1; copy_y = cur_y1;
-							for (; copy_x < BOARD_SIZE && copy_y < BOARD_SIZE && (gBoard[copy_y][copy_x] == cur_stone || gBoard[copy_y][copy_x] == STONE_BLOCK); copy_x++, copy_y++);
-							if (gBoard[copy_y][copy_x] == 0) z.board[copy_y][copy_x][cur_stone] += priority;
+							int temp_stone;
+							if (cur_stone == STONE_BLOCK) temp_stone = gBoard[copy_y][copy_x];
+							else temp_stone = cur_stone;
+
+							for (; copy_x + 1 < BOARD_SIZE && copy_y + 1 < BOARD_SIZE && (gBoard[copy_y][copy_x] == temp_stone || gBoard[copy_y][copy_x] == STONE_BLOCK);
+								copy_x++, copy_y++, cnt++);
+							if (gBoard[copy_y][copy_x] == 0) z.board[copy_y][copy_x][temp_stone] += priority;
+							if (cnt >= 4 && gBoard[copy_y][copy_x] == 0) z.board[copy_y][copy_x][temp_stone] += THREAT;
 						}
 						
 					}
 					if (cur_x2 >= 0 && cur_y2 >= 0 && cur_x2 < BOARD_SIZE && cur_y2 < BOARD_SIZE) {
 						if (gBoard[cur_y2][cur_x2] == 0) z.board[cur_y2][cur_x2][cur_stone] += priority;
 						else {
-							int copy_x, copy_y;
+							int copy_x, copy_y, cnt = 1;
 							copy_x = cur_x2; copy_y = cur_y2;
-							for (; copy_x >= 0 && copy_y >= 0 && ((gBoard[copy_y][copy_x] == cur_stone || gBoard[copy_y][copy_x] == STONE_BLOCK)); copy_y--, copy_x--);
-							if (gBoard[copy_y][copy_x] == 0) z.board[copy_y][copy_x][cur_stone] += priority;
+							int temp_stone;
+							if (cur_stone == STONE_BLOCK) temp_stone = gBoard[copy_y][copy_x];
+							else temp_stone = cur_stone;
+
+							for (; copy_x - 1>= 0 && copy_y - 1 >= 0 && ((gBoard[copy_y][copy_x] == temp_stone || gBoard[copy_y][copy_x] == STONE_BLOCK));
+								copy_y--, copy_x--, cnt++);
+							if (gBoard[copy_y][copy_x] == 0) z.board[copy_y][copy_x][temp_stone] += priority;
+							if (cnt >= 4 && gBoard[copy_y][copy_x] == 0) z.board[copy_y][copy_x][temp_stone] += THREAT;
 						}
 						
 					}
@@ -207,20 +254,32 @@ relevanceZone getRelevanceZone(int gBoard[BOARD_SIZE][BOARD_SIZE]) {
 							z.board[cur_y1][cur_x1][cur_stone] += priority;
 						}
 						else {
-							int copy_x, copy_y;
+							int copy_x, copy_y, cnt = 1;
 							copy_x = cur_x1; copy_y = cur_y1;
-							for (; copy_x >= 0 && copy_y < BOARD_SIZE && (gBoard[copy_y][copy_x] == cur_stone || gBoard[copy_y][copy_x] == STONE_BLOCK); copy_x--, copy_y++);
-							if (gBoard[copy_y][copy_x] == 0) z.board[copy_y][copy_x][cur_stone] += priority;
+							int temp_stone;
+							if (cur_stone == STONE_BLOCK) temp_stone = gBoard[copy_y][copy_x];
+							else temp_stone = cur_stone;
+
+							for (; copy_x - 1 >= 0 && copy_y + 1 < BOARD_SIZE && (gBoard[copy_y][copy_x] == temp_stone || gBoard[copy_y][copy_x] == STONE_BLOCK); 
+								copy_x--, copy_y++, cnt++);
+							if (gBoard[copy_y][copy_x] == 0) z.board[copy_y][copy_x][temp_stone] += priority;
+							if (cnt >= 4 && gBoard[copy_y][copy_x] == 0) z.board[copy_y][copy_x][temp_stone] += THREAT;
 						}
 											}
 					if (cur_x2 >= 0 && cur_y2 >= 0 && cur_x2 < BOARD_SIZE && cur_y2 < BOARD_SIZE) {
 						if (gBoard[cur_y2][cur_x2] == 0)
 							z.board[cur_y2][cur_x2][cur_stone] += priority;
 						else {
-							int copy_y, copy_x;
+							int copy_y, copy_x, cnt = 1;
 							copy_y = cur_y2; copy_x = cur_x2;
-							for (; copy_y >= 0 && copy_x < BOARD_SIZE && (gBoard[copy_y][copy_x] == cur_stone || gBoard[copy_y][copy_x] == STONE_BLOCK); copy_y--, copy_x++);
-							if (gBoard[copy_y][copy_x] == 0) z.board[copy_y][copy_x][cur_stone] += priority;
+							int temp_stone;
+							if (cur_stone == STONE_BLOCK) temp_stone = gBoard[copy_y][x];
+							else temp_stone = cur_stone;
+
+							for (; copy_y - 1 >= 0 && copy_x + 1 < BOARD_SIZE && (gBoard[copy_y][copy_x] == temp_stone || gBoard[copy_y][copy_x] == STONE_BLOCK); 
+								copy_y--, copy_x++, cnt++);
+							if (gBoard[copy_y][copy_x] == 0) z.board[copy_y][copy_x][temp_stone] += priority;
+							if (cnt >= 4 && gBoard[copy_y][copy_x] == 0) z.board[copy_y][copy_x][temp_stone] += THREAT;
 						}
 					}
 
@@ -247,9 +306,9 @@ relevanceZone getRelevanceZone(int gBoard[BOARD_SIZE][BOARD_SIZE]) {
 		}
 	}
 
-	sort(z.combZone.begin(), z.combZone.end(), cmpPriority);
-	sort(z.myZone.begin(), z.myZone.end(), cmpPriority);
-	sort(z.oppZone.begin(), z.oppZone.end(), cmpPriority);
+	std::sort(z.combZone.begin(), z.combZone.end(), cmpPriority);
+	std::sort(z.myZone.begin(), z.myZone.end(), cmpPriority);
+	std::sort(z.oppZone.begin(), z.oppZone.end(), cmpPriority);
 	return z;
 }
 

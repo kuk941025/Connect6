@@ -15,6 +15,7 @@
 #define Key_DOWN 80
 #define Key_SPACE 32
 #define KEY_I 108
+#define KEY_K 107
 
 extern int gBoard[BOARD_SIZE][BOARD_SIZE];
 extern int stone_type, play_type_black, play_type_white;
