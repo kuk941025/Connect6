@@ -95,10 +95,12 @@ void Connect6::notify_stone() {
 void Connect6::init() {
 	this->connect_num = CONNECT_NUMBER;
 	this->remaining_spaces = BOARD_SIZE * BOARD_SIZE;
+	this->last_x = this->last_y = BOARD_SIZE / 2;
 	memset(gBoard, 0, sizeof(gBoard));
 	if (generate_blocking) {
 		srand(time(NULL));
 		int blocks = rand() % 8;
+		//int blocks = 7;
 		for (int i = 0; i < blocks; i++) {
 			int rand_y, rand_x;
 			do {
@@ -109,9 +111,71 @@ void Connect6::init() {
 		}
 	}
 }
+
+void Connect6::move_pos(int move_x, int move_y) {
+	COORD cur_cord = getCursor();
+	int next_x = cur_cord.X + (move_x * 2); 
+	int next_y = cur_cord.Y + move_y;
+	if (next_x >= 0 && next_x < (BOARD_SIZE * 2)&& next_y >= 0 && next_y < BOARD_SIZE)
+		MoveCursor(next_x, next_y);
+}
+COORD Connect6::get_userinput() {
+	COORD rtr;
+	
+	MoveCursor(last_x * 2, last_y);
+	while (1) {
+		int key = _getch();
+		if (key == 224) {
+			key = _getch();
+
+			switch (key) {
+
+			case Key_DOWN:
+				move_pos(0, 1);
+				break;
+			case Key_UP:
+				move_pos(0, -1);
+				break;
+			case Key_LEFT:
+				move_pos(-1, 0);
+				break;
+			case Key_RIGHT:
+				move_pos(1, 0);
+				break;
+			default:
+				break;
+			}
+		}
+		else {
+			if (key == Key_SPACE) {
+				COORD cur_pos = getCursor();
+				rtr.X = cur_pos.X / 2;
+				rtr.Y = cur_pos.Y;
+				return rtr;
+			}
+			else if (key == KEY_I) {
+				COORD cur_pos = getCursor();
+				relevanceZone re = getRelevanceZone(gBoard);
+				clear_message();
+				for (int i = 0; i < BOARD_SIZE; i++) {
+					for (int j = 0; j < BOARD_SIZE; j++) {
+						for (int k = 1; k <= 2; k++) {
+							if (k == 1) cout << re.board[i][j][k] << ", ";
+							else cout <<  re.board[i][j][k] << "  ";
+						}
+					}
+					cout << "\n";
+				}
+				MoveCursor(cur_pos.X, cur_pos.Y);
+			}
+
+		}
+	}
+}
 void Connect6::play_connect6() {
 	show_gBoard();
 	int x1, x2,  y1, y2;
+	COORD userInput;
 	x2 = y2 = 0;
 	numStones = 1;
 	while (1) {
@@ -121,24 +185,39 @@ void Connect6::play_connect6() {
 				notify_stone();
 				while (1) {
 					if (i == 0) {
-						cin >> x1 >> y1;
-						if (x1 == -1 && y1 == -1) {
-							relevanceZone re = getRelevanceZone(gBoard);
-							clear_message();
-							for (int i = 0; i < BOARD_SIZE; i++) {
-								for (int j = 0; j < BOARD_SIZE; j++) {
-									for (int k = 1; k <= 2; k++) {
-										if (k == 1) cout << re.board[i][j][k] << ",";
-										else cout << re.board[i][j][k] << " ";
-									}
-								}
-								cout << "\n";
-							}
+						userInput = get_userinput();
+						//cin >> x1 >> y1;
+
+						//if (x1 == -1 && y1 == -1) {
+						//	relevanceZone re = getRelevanceZone(gBoard);
+						//	clear_message();
+						//	for (int i = 0; i < BOARD_SIZE; i++) {
+						//		for (int j = 0; j < BOARD_SIZE; j++) {
+						//			for (int k = 1; k <= 2; k++) {
+						//				if (k == 1) cout << re.board[i][j][k] << ",";
+						//				else cout << re.board[i][j][k] << " ";
+						//			}
+						//		}
+						//		cout << "\n";
+						//	}
+						//	for (int i = 0; i < BOARD_SIZE; i++) {
+						//		for (int j = 0; j < BOARD_SIZE; j++) {
+						//			cout << re.board[i][j][1] + re.board[i][j][2] + re.board[i][j][3] << "  ";
+						//		}
+						//		cout << "\n";
+						//	}
+						//}
+						
+						x1 = userInput.X;
+						y1 = userInput.Y;
+						if (place_stone(y1, x1, true)) { 
+							this->last_x = x1;
+							this->last_y = y1;
+							break;
 						}
-						if (place_stone(y1, x1, true)) break;
 					}
 					else {
-						cin >> x2 >> y2;
+						/*cin >> x2 >> y2;
 						if (x2 == -1 && y2 == -1) {
 							relevanceZone re = getRelevanceZone(gBoard);
 							clear_message();
@@ -151,8 +230,22 @@ void Connect6::play_connect6() {
 								}
 								cout << "\n";
 							}
+
+							for (int i = 0; i < BOARD_SIZE; i++) {
+								for (int j = 0; j < BOARD_SIZE; j++) {
+									cout << re.board[i][j][1] + re.board[i][j][2] + re.board[i][j][3] << "  ";
+								}
+								cout << "\n";
+							}
+						}*/
+						userInput = get_userinput();
+						x2 = userInput.X;
+						y2 = userInput.Y;
+						if (place_stone(y2, x2, true)) {
+							last_x = x2;
+							last_y = y2;
+							break;
 						}
-						if (place_stone(y2, x2, true)) break;
 					}
 				}
 			}
@@ -176,6 +269,7 @@ void Connect6::play_connect6() {
 		}
 
 		if (check_connect6(y1, x1) || check_connect6(y2, x2)) {
+
 			clear_message();
 			if (this->stone_type == STONE_BLACK) cout << "BLACK ";
 			else cout << "WHITE ";

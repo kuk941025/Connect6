@@ -1,6 +1,7 @@
 #pragma once
 #include "consoleAPI.h"
 #include <string.h>
+#include <conio.h>
 #define BOARD_SIZE 19
 #define STONE_BLACK 1
 #define STONE_WHITE 2
@@ -8,6 +9,13 @@
 #define PLAY_TYPE_USER 1
 #define PLAY_TYPE_AI 2
 #define CONNECT_NUMBER 6
+#define Key_LEFT 75
+#define Key_RIGHT 77
+#define Key_UP 72
+#define Key_DOWN 80
+#define Key_SPACE 32
+#define KEY_I 108
+
 extern int gBoard[BOARD_SIZE][BOARD_SIZE];
 extern int stone_type, play_type_black, play_type_white;
 struct StoneCOORD {
@@ -17,6 +25,7 @@ struct StoneCOORD {
 class Connect6 {
 private:
 	int stone_type, play_type[2], numStones;
+	int last_x, last_y;
 	bool isBlackAI, isWhiteAI, generate_blocking;
 	int gBoard[BOARD_SIZE][BOARD_SIZE] = { 0 };
 	int connect_num, remaining_spaces;
@@ -29,6 +38,8 @@ private:
 	int board_size = BOARD_SIZE;
 	void show_gBoard(); //initialize
 	void switch_stone();
+	void move_pos(int move_x, int move_y);
+	COORD get_userinput();
 	int place_stone(int y, int x, bool show);
 public:
 	int isFree(int y, int x);
