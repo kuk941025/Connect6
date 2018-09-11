@@ -22,7 +22,11 @@ int threatZone[][6] = {
 	{1, 1, 0, 1, 1, 0},
 	{0, 1, 1, 0, 1, 1},
 	{1, 1, 1, 1, 1, 0},
-	{0, 1, 1, 1, 1, 1}
+	{0, 1, 1, 1, 1, 1},
+	{1, 0, 1, 1, 1, 1},
+	{1, 1, 0, 1, 1, 1},
+	{1 ,1, 1, 0, 1, 1},
+	{1, 1, 1, 1, 0, 1}
 };
 
 StoneCOORD mansoon() {
@@ -159,18 +163,27 @@ int setThreatZone(int board[BOARD_SIZE][BOARD_SIZE], relevanceZone *zone) {
 							if (cnt < i) break;
 						}
 						//makes 4 counts a six
-//						if (x + 6 < BOARD_SIZE && (board[y][x + 6] == stone_type || board[y][x + 6] == STONE_BLOCK)) cnt++;
-//						if (x - 1 >= 0 && (board[y][x + 6] == stone_type || board[y][x + 6] == STONE_BLOCK)) cnt++;
+						bool deadzone_flag = false;
+						if (x + 6 < BOARD_SIZE && (board[y][x + 6] == stone_type || board[y][x + 6] == STONE_BLOCK)) deadzone_flag = true;
+						if (x - 1 >= 0 && (board[y][x - 1] == stone_type || board[y][x - 1] == STONE_BLOCK)) deadzone_flag = true;
 
-						if (cnt == 6) {
+						if (cnt == 6 & !deadzone_flag) {
 
 							while (!threat_pos.empty()) {
 								COORD rtr = threat_pos.back(); threat_pos.pop_back();
-								//zone.board[rtr.Y][rtr.X][stone_type] += THREAT;
-								zone->board[rtr.Y][rtr.X][stone_type] += THREAT;
+								if (zone->board[rtr.Y][rtr.X][stone_type] < 0) zone->board[rtr.Y][rtr.X][stone_type] = THREAT; //restore
+								else zone->board[rtr.Y][rtr.X][stone_type] += THREAT;
 							}
 							flag = true;
 							break;
+						}
+						else if (cnt == 6 && deadzone_flag) {
+							//deadzone
+							while (!threat_pos.empty()) {
+								COORD rtr = threat_pos.back(); threat_pos.pop_back();
+								if (zone->board[rtr.Y][rtr.X][stone_type] < THREAT)
+									zone->board[rtr.Y][rtr.X][stone_type] = -THREAT;
+							}
 						}
 						else
 							threat_pos.clear();
@@ -208,13 +221,26 @@ int setThreatZone(int board[BOARD_SIZE][BOARD_SIZE], relevanceZone *zone) {
 						}
 						if (cnt < i) break;
 					}
-					if (cnt == 6) {
+					bool deadzone_flag = false;
+					if (y + 6 < BOARD_SIZE && (board[y + 6][x] == stone_type || board[y + 6][x] == STONE_BLOCK)) deadzone_flag = true;
+					if (y - 1 >= 0 && (board[y - 1][x] == stone_type || board[y - 1][x] == STONE_BLOCK)) deadzone_flag = true;
+
+					if (cnt == 6 && !deadzone_flag) {
 						while (!threat_pos.empty()) {
 							COORD rtr = threat_pos.back(); threat_pos.pop_back();
-							zone->board[rtr.Y][rtr.X][stone_type] += THREAT;
+							if (zone->board[rtr.Y][rtr.X][stone_type] < 0) zone->board[rtr.Y][rtr.X][stone_type] = THREAT;
+							else zone->board[rtr.Y][rtr.X][stone_type] += THREAT;
 						}
 						flag = true;
 						break;
+					}
+					else if (cnt == 6 && deadzone_flag) {
+						//deadzone
+						while (!threat_pos.empty()) {
+							COORD rtr = threat_pos.back(); threat_pos.pop_back();
+							if (zone->board[rtr.Y][rtr.X][stone_type] < THREAT)
+								zone->board[rtr.Y][rtr.X][stone_type] = -THREAT;
+						}
 					}
 					else threat_pos.clear();
 				}
@@ -250,13 +276,27 @@ int setThreatZone(int board[BOARD_SIZE][BOARD_SIZE], relevanceZone *zone) {
 						}
 						if (cnt < i) break;
 					}
-					if (cnt == 6) {
+
+					bool deadzone_flag = false;
+					if (y + 6 < BOARD_SIZE && x + 6 < BOARD_SIZE && (board[y + 6][x + 6] == stone_type || board[y + 6][x + 6] == STONE_BLOCK)) deadzone_flag = true;
+					if (y - 1 >= 0 && x - 1 >= 0 && (board[y - 1][x - 1] == stone_type || board[y - 1][x - 1] == STONE_BLOCK)) deadzone_flag = true;
+
+					if (cnt == 6 && !deadzone_flag) {
 						while (!threat_pos.empty()) {
 							COORD rtr = threat_pos.back(); threat_pos.pop_back();
-							zone->board[rtr.Y][rtr.X][stone_type] += THREAT;
+							if (zone->board[rtr.Y][rtr.X][stone_type] < 0) zone->board[rtr.Y][rtr.X][stone_type] = THREAT;
+							else zone->board[rtr.Y][rtr.X][stone_type] += THREAT;
 						}
 						flag = true;
 						break;
+					}
+					else if (cnt == 6 && deadzone_flag) {
+						//deadzone
+						while (!threat_pos.empty()) {
+							COORD rtr = threat_pos.back(); threat_pos.pop_back();
+							if (zone->board[rtr.Y][rtr.X][stone_type] < THREAT)
+								zone->board[rtr.Y][rtr.X][stone_type] = -THREAT;
+						}
 					}
 					else threat_pos.clear();
 				}
@@ -293,13 +333,26 @@ int setThreatZone(int board[BOARD_SIZE][BOARD_SIZE], relevanceZone *zone) {
 						}
 						if (cnt < i) break;
 					}
-					if (cnt == 6) {
+					bool deadzone_flag = false;
+					if (y - 6 >= 0 && x + 6 < BOARD_SIZE && (board[y - 6][x + 6] == stone_type || board[y - 6][x + 6] == STONE_BLOCK)) deadzone_flag = true;
+					if (y + 1 < BOARD_SIZE && x - 1 >= 0 && (board[y + 1][x - 1] == stone_type || board[y + 1][x - 1] == STONE_BLOCK)) deadzone_flag = true;
+
+					if (cnt == 6 && !deadzone_flag) {
 						while (!threat_pos.empty()) {
 							COORD rtr = threat_pos.back(); threat_pos.pop_back();
-							zone->board[rtr.Y][rtr.X][stone_type] += THREAT;
+							if (zone->board[rtr.Y][rtr.X][stone_type] < 0) zone->board[rtr.Y][rtr.X][stone_type] = THREAT;
+							else zone->board[rtr.Y][rtr.X][stone_type] += THREAT;
 						}
 						flag = true;
 						break;
+					}
+					else if (cnt == 6 && deadzone_flag) {
+						//deadzone
+						while (!threat_pos.empty()) {
+							COORD rtr = threat_pos.back(); threat_pos.pop_back();
+							if (zone->board[rtr.Y][rtr.X][stone_type] < THREAT)
+								zone->board[rtr.Y][rtr.X][stone_type] = -THREAT;
+						}
 					}
 					else threat_pos.clear();
 				}
