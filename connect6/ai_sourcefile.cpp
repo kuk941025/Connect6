@@ -1,11 +1,30 @@
 #include "ai_sourcefile.h"
 #include <vector>
 #include <math.h>
+#include <time.h>
 
 StoneCOORD stone_pos;
 bool cmpPriority(const coordInfo &a, const coordInfo &b) {
 	return a.priority > b.priority;
 }
+int threatZone[][6] = {
+	{1, 1, 1, 1, 0, 0},
+	{0, 1, 1, 1, 1, 0},
+	{0, 0, 1, 1, 1, 1},
+	{1, 1, 1, 0, 0, 1},
+	{1, 1, 1, 0, 1, 0},
+	{0, 1, 0, 1, 1, 1},
+	{0, 1, 1, 1, 0, 1},
+	{1, 0, 0, 1, 1, 1},
+	{1, 1, 0, 0, 1, 1},
+	{1, 1, 0, 1, 0, 1},
+	{1, 0, 1, 0, 1, 1},
+	{1, 1, 0, 1, 1, 0},
+	{0, 1, 1, 0, 1, 1},
+	{1, 1, 1, 1, 1, 0},
+	{0, 1, 1, 1, 1, 1}
+};
+
 StoneCOORD mansoon() {
 	StoneCOORD rtr;
 	int cnt = c.get_numStones();
@@ -96,7 +115,218 @@ StoneCOORD locate_center(int gameboard[BOARD_SIZE][BOARD_SIZE]) {
 	rtr.x1 = center_x; rtr.y1 = center_y;
 	return rtr;
 }
+int setThreatZone(int board[BOARD_SIZE][BOARD_SIZE], relevanceZone *zone) {
+	int threat_rows = sizeof(threatZone) / sizeof(threatZone[0]);
+	int threat_cols = sizeof(threatZone[0]) / sizeof(threatZone[0][0]);
+	bool flag = false;
+	for (int y = 0; y < BOARD_SIZE; y++) {
+		for (int x = 0; x < BOARD_SIZE; x++) {
 
+			int stone_type;
+			int cnt;
+
+			//horizontal
+			if (x <= BOARD_SIZE - threat_cols) {
+				stone_type = board[y][x];
+				if (!stone_type) {
+					//if empty, find nearest stone within the range
+					for (int j = 1; j < threat_cols; j++) {
+						if (board[y][x + j] == STONE_BLACK || board[y][x + j] == STONE_WHITE) {
+							stone_type = board[y][x + j];
+							break;
+						}
+					}
+				}
+				if (stone_type != 0) {
+					for (int k = 0; k < threat_rows; k++) {
+						cnt = 0;
+
+						vector <COORD> threat_pos;
+
+						for (int i = 0; i < threat_cols; i++) {
+
+							if (threatZone[k][i] == 1 && (board[y][x + i] == stone_type || board[y][x + i] == STONE_BLOCK)) {
+								if (stone_type == STONE_BLOCK && board[y][x + i] != 0) stone_type = board[y][x + i];
+								cnt++;
+							}
+							else if (threatZone[k][i] == 0 && board[y][x + i] == 0) {
+								cnt++;
+								COORD crd;
+								crd.X = x + i; crd.Y = y;
+								threat_pos.push_back(crd);
+							}
+							
+							if (cnt < i) break;
+						}
+						//makes 4 counts a six
+//						if (x + 6 < BOARD_SIZE && (board[y][x + 6] == stone_type || board[y][x + 6] == STONE_BLOCK)) cnt++;
+//						if (x - 1 >= 0 && (board[y][x + 6] == stone_type || board[y][x + 6] == STONE_BLOCK)) cnt++;
+
+						if (cnt == 6) {
+
+							while (!threat_pos.empty()) {
+								COORD rtr = threat_pos.back(); threat_pos.pop_back();
+								//zone.board[rtr.Y][rtr.X][stone_type] += THREAT;
+								zone->board[rtr.Y][rtr.X][stone_type] += THREAT;
+							}
+							flag = true;
+							break;
+						}
+						else
+							threat_pos.clear();
+					}
+				}
+			}
+
+			if (y <= BOARD_SIZE - threat_cols){
+				//vertical
+				stone_type = board[y][x];
+				if (!stone_type || stone_type == STONE_BLOCK) {
+					//if empty, find nearest stone within the range
+					for (int j = 1; j < threat_cols; j++) {
+						if (board[y + j][x] == STONE_BLACK || board[y + j][x] == STONE_WHITE) {
+							stone_type = board[y + j][x];
+							break;
+						}
+					}
+				}
+				for (int k = 0; k < threat_rows; k++) {
+					cnt = 0;
+
+					vector <COORD> threat_pos;
+					for (int i = 0; i < threat_cols; i++) {
+
+						if (threatZone[k][i] == 1 && (board[y + i][x] == stone_type || board[y + i][x] == STONE_BLOCK)) {
+							if (stone_type == STONE_BLOCK && board[y + i][x] != 0) stone_type = board[y + i][x];
+							cnt++;
+						}
+						else if (threatZone[k][i] == 0 && board[y + i][x] == 0) {
+							cnt++;
+							COORD crd;
+							crd.X = x; crd.Y = y + i;
+							threat_pos.push_back(crd);
+						}
+						if (cnt < i) break;
+					}
+					if (cnt == 6) {
+						while (!threat_pos.empty()) {
+							COORD rtr = threat_pos.back(); threat_pos.pop_back();
+							zone->board[rtr.Y][rtr.X][stone_type] += THREAT;
+						}
+						flag = true;
+						break;
+					}
+					else threat_pos.clear();
+				}
+			}
+
+			if (x <= BOARD_SIZE - 6 && y <= BOARD_SIZE - 6){
+				//diagonal right 
+				stone_type = board[y][x];
+				if (!stone_type || stone_type == STONE_BLOCK) {
+					//if empty, find nearest stone within the range
+					for (int j = 1; j < threat_cols; j++) {
+						if (board[y + j][x + j] == STONE_BLACK || board[y + j][x + j] == STONE_WHITE) {
+							stone_type = board[y + j][x + j];
+							break;
+						}
+					}
+				}
+				for (int k = 0; k < threat_rows; k++) {
+					cnt = 0;
+
+					vector <COORD> threat_pos;
+					for (int i = 0; i < threat_cols; i++) {
+
+						if (threatZone[k][i] == 1 && (board[y + i][x + i] == stone_type || board[y + i][x + i] == STONE_BLOCK)) {
+							if (stone_type == STONE_BLOCK && board[y + i][x + i] != 0) stone_type = board[y + i][x + i];
+							cnt++;
+						}
+						else if (threatZone[k][i] == 0 && board[y + i][x + i] == 0) {
+							cnt++;
+							COORD crd;
+							crd.X = x + i; crd.Y = y + i;
+							threat_pos.push_back(crd);
+						}
+						if (cnt < i) break;
+					}
+					if (cnt == 6) {
+						while (!threat_pos.empty()) {
+							COORD rtr = threat_pos.back(); threat_pos.pop_back();
+							zone->board[rtr.Y][rtr.X][stone_type] += THREAT;
+						}
+						flag = true;
+						break;
+					}
+					else threat_pos.clear();
+				}
+
+			}
+
+			if (y >= 5 && x <= BOARD_SIZE - 6) {
+				//diagonal left
+				stone_type = board[y][x];
+				if (!stone_type || stone_type == STONE_BLOCK) {
+					//if empty, find nearest stone within the range
+					for (int j = 1; j < 6; j++) {
+						if (board[y - j][x + j] == STONE_BLACK || board[y - j][x + j] == STONE_WHITE) {
+							stone_type = board[y - j][x + j];
+							break;
+						}
+					}
+				}
+				for (int k = 0; k < threat_rows; k++) {
+					cnt = 0;
+
+					vector <COORD> threat_pos;
+					for (int i = 0; i < threat_cols; i++) {
+
+						if (threatZone[k][i] == 1 && (board[y - i][x + i] == stone_type || board[y - i][x + i] == STONE_BLOCK)) {
+							if (stone_type == STONE_BLOCK && board[y - i][x + i] != 0) stone_type = board[y - i][x + i];
+							cnt++;
+						}
+						else if (threatZone[k][i] == 0 && board[y - i][x + i] == 0) {
+							cnt++;
+							COORD crd;
+							crd.X = x + i; crd.Y = y - i;
+							threat_pos.push_back(crd);
+						}
+						if (cnt < i) break;
+					}
+					if (cnt == 6) {
+						while (!threat_pos.empty()) {
+							COORD rtr = threat_pos.back(); threat_pos.pop_back();
+							zone->board[rtr.Y][rtr.X][stone_type] += THREAT;
+						}
+						flag = true;
+						break;
+					}
+					else threat_pos.clear();
+				}
+
+			}
+
+		}
+	}
+
+	if (flag) {
+		for (int i = 0; i < BOARD_SIZE; i++) {
+			for (int j = 0; j < BOARD_SIZE; j++) {
+				coordInfo crd;
+				if (zone->board[i][j][STONE_BLACK] >= THREAT) {
+					crd.x = j; crd.y = i; crd.priority = zone->board[i][j][STONE_BLACK];
+					zone->myZone.push_back(crd);
+				}
+				else if (zone->board[i][j][STONE_WHITE] >= THREAT) {
+					crd.x = j; crd.y = i; crd.priority = zone->board[i][j][STONE_WHITE];
+					zone->oppZone.push_back(crd);
+				}
+			}
+		}
+		return 1;
+	}
+	else return 0;
+}
 relevanceZone getRelevanceZone(int gBoard[BOARD_SIZE][BOARD_SIZE]) {
 	//the function searches relevance area and threat zones where four connections are made
 	relevanceZone z;
@@ -125,19 +355,15 @@ relevanceZone getRelevanceZone(int gBoard[BOARD_SIZE][BOARD_SIZE]) {
 					if (cur_x1 >= 0 && cur_x1 < BOARD_SIZE ) {
 						if (gBoard[y][cur_x1] == 0) z.board[y][cur_x1][cur_stone] += priority;
 						else {
-							int copy_x = cur_x1, cnt = 1;
+							int copy_x = cur_x1;
 							int temp_stone; //to allow blocking to be in relevant zone calculations.
 							if (cur_stone == STONE_BLOCK) temp_stone = gBoard[y][copy_x];
 							else temp_stone = cur_stone;
 
-							for (; copy_x + 1 < BOARD_SIZE && (gBoard[y][copy_x] == temp_stone || gBoard[y][copy_x] == 3) ; copy_x++, cnt++);
+							for (; copy_x + 1 < BOARD_SIZE && (gBoard[y][copy_x] == temp_stone || gBoard[y][copy_x] == 3) ; copy_x++);
 							if (gBoard[y][copy_x] == 0) z.board[y][copy_x][temp_stone] += priority;
 
-							//threat zone search
-							if (cnt >= 4 && gBoard[y][copy_x] == 0) {
-									z.board[y][copy_x][temp_stone] += THREAT;
-								
-							}
+							
 						}
 					}
 					
@@ -145,18 +371,14 @@ relevanceZone getRelevanceZone(int gBoard[BOARD_SIZE][BOARD_SIZE]) {
 					if (cur_x2 >= 0 && cur_x2 < BOARD_SIZE) {
 						if (gBoard[y][cur_x2] == 0) z.board[y][cur_x2][cur_stone] += priority;
 						else {
-							int copy_x = cur_x2, cnt = 1;
+							int copy_x = cur_x2;
 							int temp_stone;
 							if (cur_stone == STONE_BLOCK) temp_stone = gBoard[y][copy_x];
 							else temp_stone = cur_stone;
 
-							for (; copy_x - 1 >= 0 && (gBoard[y][copy_x] == temp_stone|| gBoard[y][copy_x] == STONE_BLOCK); copy_x--, cnt++);
+							for (; copy_x - 1 >= 0 && (gBoard[y][copy_x] == temp_stone|| gBoard[y][copy_x] == STONE_BLOCK); copy_x--);
 							if (gBoard[y][copy_x] == 0) z.board[y][copy_x][temp_stone] += priority;
-							if (cnt >= 4 && gBoard[y][copy_x] == 0) {
 
-									z.board[y][copy_x][temp_stone] += THREAT;
-
-							}
 						}
 						
 					}
@@ -172,28 +394,28 @@ relevanceZone getRelevanceZone(int gBoard[BOARD_SIZE][BOARD_SIZE]) {
 					if (cur_y1 >= 0 && cur_y1 < BOARD_SIZE) {
 						if (gBoard[cur_y1][x] == 0) z.board[cur_y1][x][cur_stone] += priority;
 						else {
-							int copy_y = cur_y1, cnt = 1;
+							int copy_y = cur_y1;
 							int temp_stone;
 							if (cur_stone == STONE_BLOCK) temp_stone = gBoard[copy_y][x];
 							else temp_stone = cur_stone;
 
-							for (; copy_y + 1 < BOARD_SIZE && (gBoard[copy_y][x] == temp_stone || gBoard[copy_y][x] == STONE_BLOCK); copy_y++, cnt++);
+							for (; copy_y + 1 < BOARD_SIZE && (gBoard[copy_y][x] == temp_stone || gBoard[copy_y][x] == STONE_BLOCK); copy_y++);
 							if (gBoard[copy_y][x] == 0) z.board[copy_y][x][temp_stone] += priority;
-							if (cnt >= 4 && gBoard[copy_y][x] == 0) z.board[copy_y][x][temp_stone] += THREAT;
+							
 						}
 
 					}
 					if (cur_y2 >= 0 && cur_y1 < BOARD_SIZE) {
 						if (gBoard[cur_y2][x] == 0) z.board[cur_y2][x][cur_stone] += priority;
 						else {
-							int copy_y = cur_y2, cnt = 1;
+							int copy_y = cur_y2;
 							int temp_stone;
 							if (cur_stone == STONE_BLOCK) temp_stone = gBoard[copy_y][x];
 							else temp_stone = cur_stone;
 
-							for (; copy_y - 1 >= 0 && (gBoard[copy_y][x] == temp_stone || gBoard[copy_y][x] == STONE_BLOCK); copy_y--, cnt++);
+							for (; copy_y - 1 >= 0 && (gBoard[copy_y][x] == temp_stone || gBoard[copy_y][x] == STONE_BLOCK); copy_y--);
 							if (gBoard[copy_y][x] == 0) z.board[copy_y][x][temp_stone] += priority;
-							if (cnt >= 4 && gBoard[copy_y][x] == 0) z.board[copy_y][x][temp_stone] += THREAT;
+							
 						}
 		
 					}
@@ -210,32 +432,31 @@ relevanceZone getRelevanceZone(int gBoard[BOARD_SIZE][BOARD_SIZE]) {
 					if (cur_x1 >= 0 && cur_y1 >= 0 && cur_x1 < BOARD_SIZE && cur_y1 < BOARD_SIZE) {
 						if (gBoard[cur_y1][cur_x1] == 0) z.board[cur_y1][cur_x1][cur_stone] += priority;
 						else {
-							int copy_x, copy_y, cnt = 1;
+							int copy_x, copy_y;
 							copy_x = cur_x1; copy_y = cur_y1;
 							int temp_stone;
 							if (cur_stone == STONE_BLOCK) temp_stone = gBoard[copy_y][copy_x];
 							else temp_stone = cur_stone;
 
 							for (; copy_x + 1 < BOARD_SIZE && copy_y + 1 < BOARD_SIZE && (gBoard[copy_y][copy_x] == temp_stone || gBoard[copy_y][copy_x] == STONE_BLOCK);
-								copy_x++, copy_y++, cnt++);
+								copy_x++, copy_y++);
 							if (gBoard[copy_y][copy_x] == 0) z.board[copy_y][copy_x][temp_stone] += priority;
-							if (cnt >= 4 && gBoard[copy_y][copy_x] == 0) z.board[copy_y][copy_x][temp_stone] += THREAT;
+							
 						}
 						
 					}
 					if (cur_x2 >= 0 && cur_y2 >= 0 && cur_x2 < BOARD_SIZE && cur_y2 < BOARD_SIZE) {
 						if (gBoard[cur_y2][cur_x2] == 0) z.board[cur_y2][cur_x2][cur_stone] += priority;
 						else {
-							int copy_x, copy_y, cnt = 1;
+							int copy_x, copy_y;
 							copy_x = cur_x2; copy_y = cur_y2;
 							int temp_stone;
 							if (cur_stone == STONE_BLOCK) temp_stone = gBoard[copy_y][copy_x];
 							else temp_stone = cur_stone;
 
 							for (; copy_x - 1>= 0 && copy_y - 1 >= 0 && ((gBoard[copy_y][copy_x] == temp_stone || gBoard[copy_y][copy_x] == STONE_BLOCK));
-								copy_y--, copy_x--, cnt++);
+								copy_y--, copy_x--);
 							if (gBoard[copy_y][copy_x] == 0) z.board[copy_y][copy_x][temp_stone] += priority;
-							if (cnt >= 4 && gBoard[copy_y][copy_x] == 0) z.board[copy_y][copy_x][temp_stone] += THREAT;
 						}
 						
 					}
@@ -254,7 +475,7 @@ relevanceZone getRelevanceZone(int gBoard[BOARD_SIZE][BOARD_SIZE]) {
 							z.board[cur_y1][cur_x1][cur_stone] += priority;
 						}
 						else {
-							int copy_x, copy_y, cnt = 1;
+							int copy_x, copy_y;
 							copy_x = cur_x1; copy_y = cur_y1;
 							int temp_stone;
 							if (cur_stone == STONE_BLOCK) temp_stone = gBoard[copy_y][copy_x];
@@ -263,23 +484,23 @@ relevanceZone getRelevanceZone(int gBoard[BOARD_SIZE][BOARD_SIZE]) {
 							for (; copy_x - 1 >= 0 && copy_y + 1 < BOARD_SIZE && (gBoard[copy_y][copy_x] == temp_stone || gBoard[copy_y][copy_x] == STONE_BLOCK); 
 								copy_x--, copy_y++, cnt++);
 							if (gBoard[copy_y][copy_x] == 0) z.board[copy_y][copy_x][temp_stone] += priority;
-							if (cnt >= 4 && gBoard[copy_y][copy_x] == 0) z.board[copy_y][copy_x][temp_stone] += THREAT;
+							
 						}
 											}
 					if (cur_x2 >= 0 && cur_y2 >= 0 && cur_x2 < BOARD_SIZE && cur_y2 < BOARD_SIZE) {
 						if (gBoard[cur_y2][cur_x2] == 0)
 							z.board[cur_y2][cur_x2][cur_stone] += priority;
 						else {
-							int copy_y, copy_x, cnt = 1;
+							int copy_y, copy_x;
 							copy_y = cur_y2; copy_x = cur_x2;
 							int temp_stone;
 							if (cur_stone == STONE_BLOCK) temp_stone = gBoard[copy_y][x];
 							else temp_stone = cur_stone;
 
 							for (; copy_y - 1 >= 0 && copy_x + 1 < BOARD_SIZE && (gBoard[copy_y][copy_x] == temp_stone || gBoard[copy_y][copy_x] == STONE_BLOCK); 
-								copy_y--, copy_x++, cnt++);
+								copy_y--, copy_x++);
 							if (gBoard[copy_y][copy_x] == 0) z.board[copy_y][copy_x][temp_stone] += priority;
-							if (cnt >= 4 && gBoard[copy_y][copy_x] == 0) z.board[copy_y][copy_x][temp_stone] += THREAT;
+							
 						}
 					}
 
@@ -288,6 +509,7 @@ relevanceZone getRelevanceZone(int gBoard[BOARD_SIZE][BOARD_SIZE]) {
 			}
 		}
 	}
+	setThreatZone(gBoard, &z);
 	for (int i = 0; i < BOARD_SIZE; i++) {
 		for (int j = 0; j < BOARD_SIZE; j++) {
 			if (z.board[i][j][STONE_BLACK] + z.board[i][j][STONE_WHITE] + z.board[i][j][STONE_BLOCK] > 0) {
@@ -312,8 +534,23 @@ relevanceZone getRelevanceZone(int gBoard[BOARD_SIZE][BOARD_SIZE]) {
 	return z;
 }
 
-int evaluate_board(int gBoard[BOARD_SIZE][BOARD_SIZE]) {
-	return 0;
+int evaluate_board(int gameboard[BOARD_SIZE][BOARD_SIZE]) {
+	//higher relevanze zone weights usually represent more optimal solution
+	relevanceZone threats;
+	if (setThreatZone(gameboard, &threats)) { //if there exist threats
+		if (threats.myZone.size() > 0) return 1000;
+		else if (threats.oppZone.size() > 0) return -1000;
+		else return -1; //error
+	}
+	
+	relevanceZone relevants;
+	int evals = 0;
+	relevants = getRelevanceZone(gameboard);
+	int size = relevants.myZone.size();
+	for (int i = 0; i < size; i++) {
+		evals += (relevants.myZone[i].priority - relevants.oppZone[i].priority);
+	}
+	return evals;
 }
 int minimax(int gameboard[BOARD_SIZE][BOARD_SIZE], relevanceZone zone, int depth, int alpha, int beta, bool max) {
 	//1 represents mine, 2 represennts opponents
@@ -321,12 +558,81 @@ int minimax(int gameboard[BOARD_SIZE][BOARD_SIZE], relevanceZone zone, int depth
 	//start search + alpha beta		
 	return 0;
 	if (depth == 0) {
+		//remember the last stone pos
 		return evaluate_board(gameboard);
 	}
 
 	if (max) {
 		int maxEval = -INF;
 		int zone_size = zone.myZone.size();
+		relevanceZone threats;
+		setThreatZone(gameboard, &threats);
+		int myThreatSize = threats.myZone.size();
+		if (myThreatSize > 0) {
+			//winable situation
+			if (depth == DEPTH_LVL) {
+				if (myThreatSize > 2) {
+					//delete unncessary threats
+					for (int i = 0; i < myThreatSize; i++) {
+						if (threats.myZone[i].priority < 200) threats.myZone.erase(threats.myZone.begin() + i);
+					}
+					
+					if (threats.myZone.size() == 2) {
+						stone_pos.x1 = threats.myZone[0].x;
+						stone_pos.y1 = threats.myZone[0].y;
+						stone_pos.x2 = threats.myZone[1].x;
+						stone_pos.y2 = threats.myZone[1].y;
+					}
+					else {
+						// if multiple answers exist
+						// find a matching pair with the first
+						int remain_size = threats.myZone.size();
+						int matched_pair = 0;
+						for (int matched_pair = 1; matched_pair < remain_size; matched_pair++) {
+							if (threats.myZone[0].x == threats.myZone[matched_pair].x) break;
+							else if (threats.myZone[0].y == threats.myZone[matched_pair].y) break;
+							else if (abs(threats.myZone[0].y - threats.myZone[matched_pair].y) == 5 && abs(threats.myZone[0].x - threats.myZone[matched_pair].x) == 5) break;
+						}
+
+						stone_pos.x1 = threats.myZone[0].x;
+						stone_pos.y1 = threats.myZone[0].y;
+						stone_pos.x2 = threats.myZone[matched_pair].x;
+						stone_pos.y2 = threats.myZone[matched_pair].y;
+					}
+				}
+				else if (myThreatSize == 2) {
+					stone_pos.x1 = threats.myZone[0].x;
+					stone_pos.y1 = threats.myZone[0].y;
+					stone_pos.x2 = threats.myZone[1].x;
+					stone_pos.y2 = threats.myZone[1].y;
+				}
+				else if (myThreatSize == 1) {
+					int rand_y, rand_x;
+					stone_pos.x1 = threats.myZone[0].x;
+					stone_pos.y1 = threats.myZone[0].y;
+					srand(time(NULL));
+					do {
+						rand_y = rand() % BOARD_SIZE;
+						rand_x = rand() % BOARD_SIZE;
+					} while (c.isFree(rand_y, rand_x));
+					stone_pos.x2 = rand_x;
+					stone_pos.y2 = rand_y;
+					
+				}
+				return 0;
+			}
+			else return 1000; //winable situation, no needed to be searched further
+		}
+		//priortize defending threats and must not be visited; there must exist a condition check for below so that the blocked area wont be visited
+		int oppThreatSize = threats.oppZone.size();
+		std::sort(zone.oppZone.begin(), zone.oppZone.end(), cmpPriority);
+		if (oppThreatSize == 4) {
+			
+		}
+		else if (oppThreatSize == 3) {
+
+		}
+
 		for (int i = 0; i < zone_size - 1; i++) {
 			for (int j = i + 1; j < zone_size; j++) {
 				//set priority of selected positions to zero so that they won't be used again in child nodes.

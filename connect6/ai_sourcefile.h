@@ -26,6 +26,7 @@ struct relevanceZone {
 };
 
 StoneCOORD random_ai();
+int setThreatZone(int board[BOARD_SIZE][BOARD_SIZE], relevanceZone *zone);
 int minimax (int gBoard[BOARD_SIZE][BOARD_SIZE] , relevanceZone zone, int depth, int alpha, int beta, bool max);
 relevanceZone getRelevanceZone(int gBoard[BOARD_SIZE][BOARD_SIZE]);
 StoneCOORD mansoon();

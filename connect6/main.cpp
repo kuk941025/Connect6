@@ -4,14 +4,14 @@
 #include "ai_sourcefile.h"
 #include "mandeuk.h"
 using namespace std;
-Connect6 c = Connect6(false, false);
+Connect6 c = Connect6(false , false);
 
 int main() {
 	srand(time(NULL));
 	
 	c.set_blackAI(&mandeuk);
-	c.set_whiteAI(&mansoon);
-	c.set_blocking(true);
+	c.set_whiteAI(&mandeuk);
+	c.set_blocking(false);
 	c.init();
 	c.play_connect6();
 //	c.simulate(&random_ai, &mandeuk, 10);

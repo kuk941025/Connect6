@@ -109,7 +109,7 @@ void Connect6::init() {
 			} while (!isFree(rand_y, rand_x));
 			gBoard[rand_y][rand_x] = STONE_BLOCK;
 		}
-		gBoard[8][8] = STONE_BLOCK;
+		
 	}
 }
 
@@ -161,8 +161,8 @@ COORD Connect6::get_userinput() {
 				for (int i = 0; i < BOARD_SIZE; i++) {
 					for (int j = 0; j < BOARD_SIZE; j++) {
 						for (int k = 1; k <= 2; k++) {
-							if (k == 1) cout << re.board[i][j][k] << ", ";
-							else cout << re.board[i][j][k] << "  ";
+							if (k == 1) cout << "(" << re.board[i][j][k] << ", ";
+							else cout << re.board[i][j][k] << ")  ";
 						}
 					}
 					cout << "\n";
