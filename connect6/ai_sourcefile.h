@@ -22,6 +22,7 @@ struct cmp {
 struct relevanceZone {
 //	priority_queue<coordInfo, vector<coordInfo>, cmp> pq, oppP, myP;
 	vector<coordInfo> combZone, myZone, oppZone;
+	vector<coordInfo> myDeadZone, oppDeadZone;
 	int board[BOARD_SIZE][BOARD_SIZE][4];
 };
 
