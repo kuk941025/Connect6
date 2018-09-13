@@ -368,7 +368,7 @@ int setThreatZone(int board[BOARD_SIZE][BOARD_SIZE], relevanceZone *zone) {
 				coordInfo crd;
 				if (zone->board[i][j][STONE_BLACK] >= THREAT) {
 					crd.x = j; crd.y = i; crd.priority = zone->board[i][j][STONE_BLACK];
-					zone->myZone.push_back(crd);
+					zone->myThreatZone.push_back(crd);
 				}
 				else if (zone->board[i][j][STONE_BLACK] < 0) {
 					crd.x = j; crd.y = i; crd.priority = zone->board[i][j][STONE_BLACK];
@@ -376,7 +376,7 @@ int setThreatZone(int board[BOARD_SIZE][BOARD_SIZE], relevanceZone *zone) {
 				}
 				else if (zone->board[i][j][STONE_WHITE] >= THREAT) {
 					crd.x = j; crd.y = i; crd.priority = zone->board[i][j][STONE_WHITE];
-					zone->oppZone.push_back(crd);
+					zone->oppThreatZone.push_back(crd);
 				}
 				else if (zone->board[i][j][STONE_WHITE] < 0) {
 					crd.x = j; crd.y = i; crd.priority = zone->board[i][j][STONE_WHITE];
@@ -1042,13 +1042,14 @@ int simple_minimax(int gameboard[BOARD_SIZE][BOARD_SIZE], relevanceZone zone,  i
 		int maxEval = -INF;
 		int zone_size = zone.oppZone.size();
 		for (int i = 0; i < zone_size - 1; i++) {
-			for (int j = 1; j < zone_size; j++) {
+			if (i > 3) break;
+			for (int j = i + 1; j < zone_size; j++) {
 				coordInfo first_info = zone.myZone[i];
 				coordInfo second_info = zone.myZone[j];
-				if (first_info.priority < 3) continue;
-				if (second_info.priority < 3) continue;
-				if (i == j) continue;
-				
+				if (j > 4) break;
+				if (first_info.priority <= 0) continue;
+				if (second_info.priority <=  0) continue;
+								
 				gameboard[first_info.y][first_info.x] = 1;
 				gameboard[second_info.y][second_info.x] = 1;
 				zone.myZone[i].priority = zone.myZone[j].priority = 0;
@@ -1059,7 +1060,8 @@ int simple_minimax(int gameboard[BOARD_SIZE][BOARD_SIZE], relevanceZone zone,  i
 				gameboard[second_info.y][second_info.x] = 0;
 				zone.myZone[i].priority = zone.myZone[j].priority = 3;
 				if (eval > maxEval) {
-					if (depth == 2) {
+					maxEval = eval;
+					if (depth == 4) {
 						simple_stone_pos.x1 = first_info.x;
 						simple_stone_pos.y1 = first_info.y;
 						simple_stone_pos.x2 = second_info.x;
@@ -1072,10 +1074,10 @@ int simple_minimax(int gameboard[BOARD_SIZE][BOARD_SIZE], relevanceZone zone,  i
 				if (beta <= alpha) break;
 
 				
-				if (j > 5) break;
+
 
 			}
-			if (i > 5) break;
+			
 		}
 		return maxEval;
 	}
@@ -1083,11 +1085,14 @@ int simple_minimax(int gameboard[BOARD_SIZE][BOARD_SIZE], relevanceZone zone,  i
 		int minEval = INF;
 		int zone_size = zone.oppZone.size();
 		for (int i = 0; i < zone_size - 1; i++) {
+			if (i > 3) break;
 			for (int j = 1; j < zone_size; j++) {
 				coordInfo first_info = zone.oppZone[i];
 				coordInfo second_info = zone.oppZone[j];
-				if (first_info.priority < 3) continue;
-				if (second_info.priority < 3) continue;
+
+				if (j > 3) break;
+				if (first_info.priority <= 0) continue;
+				if (second_info.priority <= 0) continue;
 
 				gameboard[first_info.y][first_info.x] = 1;
 				gameboard[second_info.y][second_info.x] = 1;
@@ -1101,9 +1106,8 @@ int simple_minimax(int gameboard[BOARD_SIZE][BOARD_SIZE], relevanceZone zone,  i
 				if (eval < beta) beta = eval;
 				if (beta <= alpha) break;
 
-				if (j > 5) break;
 			}
-			if (i > 5) break;
+
 		}
 		return minEval;
 	}
@@ -1141,7 +1145,8 @@ StoneCOORD dumb_minimax() {
 		rtr.y2 = temp2.y1;
 	}
 	else {
-		simple_minimax(gameboard, getRelevanceZone(gameboard),2, -INF, INF, true);
+		relevanceZone zone = getRelevanceZone(gameboard);
+		simple_minimax(gameboard, zone ,4, -INF, INF, true);
 		rtr.x1 = simple_stone_pos.x1;
 		rtr.y1 = simple_stone_pos.y1;
 		rtr.x2 = simple_stone_pos.x2;
