@@ -14,7 +14,7 @@ int Connect6::check_connect6(int last_y, int last_x) {
 	
 	//horizontal check
 	cnt = 0;
-	while ((gBoard[y][x - 1] == stone_type || gBoard[y][x - 1] == STONE_BLOCK) && x >= 0)
+	while ((gBoard[y][x - 1] == stone_type || gBoard[y][x - 1] == STONE_BLOCK) && x - 1 >= 0)
 		x--;
 	while ((gBoard[y][x] == stone_type || gBoard[y][x] == STONE_BLOCK) && x < board_size) {
 		cnt++;
@@ -27,7 +27,7 @@ int Connect6::check_connect6(int last_y, int last_x) {
 	//vertical check
 	cnt = 0;
 	y = last_y; x = last_x;
-	while ((gBoard[y - 1][x] == stone_type || gBoard[y - 1][x] == STONE_BLOCK) && y >= 0)
+	while ((gBoard[y - 1][x] == stone_type || gBoard[y - 1][x] == STONE_BLOCK) && y - 1>= 0)
 		y--;
 	while ((gBoard[y][x] == stone_type || gBoard[y][x] == STONE_BLOCK) && y < board_size) {
 		cnt++;
@@ -40,7 +40,7 @@ int Connect6::check_connect6(int last_y, int last_x) {
 	//diagonal bottom right
 	cnt = 0;
 	y = last_y; x = last_x;
-	while ((gBoard[y - 1][x - 1] == stone_type || gBoard[y - 1][x - 1] == STONE_BLOCK) && x >= 0 && y >= 0) {
+	while ((gBoard[y - 1][x - 1] == stone_type || gBoard[y - 1][x - 1] == STONE_BLOCK) && x - 1>= 0 && y - 1 >= 0) {
 		y--;
 		x--;
 	}
@@ -55,7 +55,7 @@ int Connect6::check_connect6(int last_y, int last_x) {
 	//diagonal bottom left
 	cnt = 0;
 	y = last_y; x = last_x;
-	while ((gBoard[y - 1][x + 1] == stone_type || gBoard[y - 1][x + 1] == STONE_BLOCK )&& x >= 0 && y >= 0) {
+	while ((gBoard[y - 1][x + 1] == stone_type || gBoard[y - 1][x + 1] == STONE_BLOCK )&& x + 1 >= 0 && y - 1 >= 0) {
 		y--;
 		x++;
 	}
