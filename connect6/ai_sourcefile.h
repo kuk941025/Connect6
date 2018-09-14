@@ -37,3 +37,6 @@ relevanceZone getRelevanceZone(int gBoard[BOARD_SIZE][BOARD_SIZE]);
 StoneCOORD mansoon();
 bool cmpPriority(const coordInfo &a, const coordInfo &b);
 StoneCOORD locate_center(int gameboard[BOARD_SIZE][BOARD_SIZE]);
+StoneCOORD dumb_minimax_threats();
+StoneCOORD setFinshMoves(int gameboard[BOARD_SIZE][BOARD_SIZE], relevanceZone threats);
+StoneCOORD setDefenseMoves(int gameboard[BOARD_SIZE][BOARD_SIZE], relevanceZone threats);

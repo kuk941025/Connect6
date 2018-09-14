@@ -3,6 +3,7 @@
 #include <iostream>
 #include <stdlib.h>
 #include <time.h>
+#include <ctime>
 using namespace std;
 
 
@@ -225,6 +226,7 @@ void Connect6::play_connect6() {
 		else {
 			//ai is playing
 			StoneCOORD res;
+			clock_t begin = clock();
 			if (stone_type == STONE_BLACK) {
 				res = black_ai();
 			}
@@ -237,6 +239,12 @@ void Connect6::play_connect6() {
 			if (place_stone(res.y2, res.x2, true)) {
 				x2 = res.x2; y2 = res.y2;
 			}
+			clock_t end = clock();
+			double elasped_secs = double(end - begin) / CLOCKS_PER_SEC;
+			string message;
+			char buff[100];
+			sprintf_s(buff, "(%d, %d) (%d, %d)\n%lf seconds elasped.", res.x1, res.y1, res.x2, res.y2, elasped_secs);
+			show_message(buff);
 			
 		}
 

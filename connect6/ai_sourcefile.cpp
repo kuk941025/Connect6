@@ -741,17 +741,17 @@ relevanceZone combineRelevanceThreat(relevanceZone threats, relevanceZone relZon
 int evaluate_board(int gameboard[BOARD_SIZE][BOARD_SIZE]) {
 	//higher relevanze zone weights usually represent more optimal solution
 	eval_called++;
-	relevanceZone threats;
-	if (setThreatZone(gameboard, &threats)) { //if there exist threats
-		if (threats.myThreatZone.size() > 0) return 1000 * threats.myThreatZone.size();
-		else if (threats.oppThreatZone.size() > 0) return -1000 * threats.oppThreatZone.size();
-		else return -1; //error
-	}
+	//relevanceZone threats;
+	//if (setThreatZone(gameboard, &threats)) { //if there exist threats
+	//	if (threats.myThreatZone.size() > 0) return 1000 * threats.myThreatZone.size();
+	//	else if (threats.oppThreatZone.size() > 0) return -1000 * threats.oppThreatZone.size();
+	//	else return -1; //error
+	//}
 	
 	relevanceZone relevants;
 	int evals = 0;
-
-	relevants = combineRelevanceThreat(threats, getRelevanceZone(gameboard));
+	relevants = getRelevanceZone(gameboard);
+	//relevants = combineRelevanceThreat(threats, getRelevanceZone(gameboard));
 	int size = relevants.myZone.size();
 	for (int i = 0; i < size; i++) {
 		evals += (relevants.myZone[i].priority - relevants.oppZone[i].priority);
@@ -1152,11 +1152,11 @@ int simple_minimax(int gameboard[BOARD_SIZE][BOARD_SIZE], relevanceZone zone,  i
 		int maxEval = -INF;
 		int zone_size = zone.oppZone.size();
 		for (int i = 0; i < zone_size - 1; i++) {
-			if (i > 3) break;
+			if (i > 4) break;
 			for (int j = i + 1; j < zone_size; j++) {
 				coordInfo first_info = zone.myZone[i];
 				coordInfo second_info = zone.myZone[j];
-				if (j > i + 3) break;
+				if (j > i + 4) break;
 				if (first_info.priority <= 0) continue;
 				if (second_info.priority <=  0) continue;
 								
@@ -1206,12 +1206,12 @@ int simple_minimax(int gameboard[BOARD_SIZE][BOARD_SIZE], relevanceZone zone,  i
 		int minEval = INF;
 		int zone_size = zone.oppZone.size();
 		for (int i = 0; i < zone_size - 1; i++) {
-			if (i > 3) break;
+			if (i > 4) break;
 			for (int j = 1; j < zone_size; j++) {
 				coordInfo first_info = zone.oppZone[i];
 				coordInfo second_info = zone.oppZone[j];
 
-				if (j > i +3) break;
+				if (j > i + 4) break;
 				if (first_info.priority <= 0) continue;
 				if (second_info.priority <= 0) continue;
 
@@ -1238,9 +1238,11 @@ int simple_minimax(int gameboard[BOARD_SIZE][BOARD_SIZE], relevanceZone zone,  i
 		return minEval;
 	}
 }
-StoneCOORD dumb_minimax() {
+
+StoneCOORD dumb_minimax_threats() {
 	int gameboard[BOARD_SIZE][BOARD_SIZE];
 	int initStone, initOpps;
+	
 	eval_called = 0;
 	threats_called = 0;
 	initStone = initOpps = 0;
@@ -1253,6 +1255,10 @@ StoneCOORD dumb_minimax() {
 	}
 
 	StoneCOORD rtr;
+	relevanceZone threats, relZone;
+	setThreatZone(gameboard, &threats);
+	relZone = getRelevanceZone(gameboard);
+	relZone = combineRelevanceThreat(threats, relZone);
 
 	if (initStone == 0) {
 		rtr.x1 = BOARD_SIZE / 2;
@@ -1272,14 +1278,174 @@ StoneCOORD dumb_minimax() {
 		rtr.y2 = temp2.y1;
 	}
 	else {
-		relevanceZone zone = getRelevanceZone(gameboard);
+		//relevanceZone zone = getRelevanceZone(gameboard);
 
-		simple_minimax(gameboard, zone ,4, -INF, INF, true);
+		simple_minimax(gameboard, relZone ,4, -INF, INF, true);
 		rtr.x1 = simple_stone_pos.x1;
 		rtr.y1 = simple_stone_pos.y1;
 		rtr.x2 = simple_stone_pos.x2;
 		rtr.y2 = simple_stone_pos.y2;
 	}
 
+	return rtr;
+}
+StoneCOORD dumb_minimax() {
+	//further updates
+	//connect 5 move ==> unncessary
+	//threat updates on last stone moves
+	//better evaluation (balance between my + opp
+	int gameboard[BOARD_SIZE][BOARD_SIZE];
+	int initStone, initOpps;
+
+	eval_called = 0;
+	threats_called = 0;
+	initStone = initOpps = 0;
+	for (int i = 0; i < BOARD_SIZE; i++) {
+		for (int j = 0; j < BOARD_SIZE; j++) {
+			gameboard[i][j] = c.showBoard(j, i);
+			if (gameboard[i][j] != 0) initStone++;
+			if (gameboard[i][j] == 2) initOpps++;
+		}
+	}
+
+	StoneCOORD rtr;
+	relevanceZone threats, relZone;
+	setThreatZone(gameboard, &threats);
+	relZone = getRelevanceZone(gameboard);
+
+	if (threats.myThreatZone.size() > 0) {
+		rtr = setFinshMoves(gameboard, threats);
+		return rtr;
+	}
+	if (threats.oppThreatZone.size() > 0) {
+		rtr = setDefenseMoves(gameboard, threats);
+		if (rtr.x2 == 0 && rtr.y2 == 0	) { //one stone remaining
+			gameboard[rtr.y1][rtr.x1] = 1;
+			simple_minimax(gameboard, relZone, 4, -INF, INF, true);
+			rtr.x2 = simple_stone_pos.x1;
+			rtr.y2 = simple_stone_pos.y1;
+		}
+		return rtr;
+	}
+	if (initStone == 0) {
+		rtr.x1 = BOARD_SIZE / 2;
+		rtr.y1 = BOARD_SIZE / 2;
+	}
+	else if (initOpps == 0) {
+		rtr = locate_center(gameboard);
+	}
+	else if (initOpps == 1) {
+		StoneCOORD temp1, temp2;
+		temp1 = locate_center(gameboard);
+		gameboard[temp1.y1][temp1.x1] = 1;
+		temp2 = locate_center(gameboard);
+		rtr.x1 = temp1.x1;
+		rtr.y1 = temp1.y1;
+		rtr.x2 = temp2.x1;
+		rtr.y2 = temp2.y1;
+	}
+	else {
+		//relevanceZone zone = getRelevanceZone(gameboard);
+
+		simple_minimax(gameboard, relZone, 4, -INF, INF, true);
+		rtr.x1 = simple_stone_pos.x1;
+		rtr.y1 = simple_stone_pos.y1;
+		rtr.x2 = simple_stone_pos.x2;
+		rtr.y2 = simple_stone_pos.y2;
+	}
+
+	return rtr;
+}
+StoneCOORD setFinshMoves(int gameboard[BOARD_SIZE][BOARD_SIZE], relevanceZone threats) {
+	//search all possible locations
+	StoneCOORD rtr;
+	rtr.x1 = rtr.x2 = rtr.y1 = rtr.y2 = 0;
+	int tSize = threats.myThreatZone.size();
+	//if can be finished by one move
+	for (int i = 0; i < tSize; i++) {
+		coordInfo crd = threats.myThreatZone[i];
+		gameboard[crd.y][crd.x] = 1;
+		if (check_connect6(gameboard, crd.x, crd.y)) {
+			rtr.x1 = crd.x; rtr.y1 = crd.y;
+			int rnd_x, rnd_y;
+			do {
+				rnd_x = rand() % BOARD_SIZE;
+				rnd_y = rand() % BOARD_SIZE;
+			} while (!c.isFree(rnd_y, rnd_x));
+			rtr.x2 = rnd_x; rtr.y2 = rnd_y;
+			return rtr;
+		}
+		gameboard[crd.y][crd.x] = 0;
+	}
+
+	//if cannot be finished by one move
+	for (int i = 0; i < tSize - 1; i++) {
+		for (int j = i + 1; j < tSize; j++) {
+			coordInfo crd1, crd2;
+			crd1 = threats.myThreatZone[i];
+			crd2 = threats.myThreatZone[j];
+			gameboard[crd1.y][crd1.x] = gameboard[crd2.y][crd2.x] = 1;
+			if (check_connect6(gameboard, crd1.x, crd2.y) || check_connect6(gameboard, crd2.x, crd2.y)) {
+				rtr.x1 = crd1.x; rtr.y1 = crd1.y;
+				rtr.x2 = crd2.x; rtr.y2 = crd2.y;
+				return rtr;
+			}
+			gameboard[crd1.y][crd1.x] = gameboard[crd2.y][crd2.x] = 0;
+		}
+	}
+	
+	rtr = random_ai();
+	return rtr;
+}
+
+StoneCOORD setDefenseMoves(int gameboard[BOARD_SIZE][BOARD_SIZE], relevanceZone threats) {
+	StoneCOORD rtr;
+	rtr.x1 = rtr.x2 = rtr.y1 = rtr.y2 = 0;
+	//place the stone highest priority
+	//if threat is gone, minimax traversal starts;
+	rtr.x1 = threats.oppThreatZone[0].x;
+	rtr.y1 = threats.oppThreatZone[0].y;
+	gameboard[threats.oppThreatZone[0].y][threats.oppThreatZone[0].x] = 1;
+	relevanceZone updated;
+	setThreatZone(gameboard, &updated);
+	if (updated.oppThreatZone.size() == 0) {
+		return rtr;
+	}
+	else {
+		int size = updated.oppThreatZone.size();
+		for (int i = 0; i < size; i++) {
+			gameboard[updated.oppThreatZone[i].y][updated.oppThreatZone[i].x] = 1;
+			relevanceZone updatedThreats;
+			setThreatZone(gameboard, &updatedThreats);
+			
+			if (updatedThreats.oppThreatZone.size() == 0) { //if block successful
+				rtr.x2 = updated.oppThreatZone[i].x;
+				rtr.y2 = updated.oppThreatZone[i].y;
+				return rtr;
+			}
+			gameboard[updated.oppThreatZone[i].y][updated.oppThreatZone[i].x] = 0;
+		}
+	}
+	//stil no answer is found, search all
+	int threatSize = threats.oppThreatZone.size();
+	for (int i = 0; i < threatSize - 1; i++) {
+		for (int j = i + 1; j < threatSize - 1; j++) {
+			coordInfo crd1, crd2;
+			crd1 = threats.oppThreatZone[i];
+			crd2 = threats.oppThreatZone[j];
+			gameboard[crd1.y][crd1.x] = gameboard[crd2.y][crd2.x] = 1;
+			relevanceZone update;
+			setThreatZone(gameboard, &update);
+			if (update.oppThreatZone.size() == 0) {
+				rtr.x1 = crd1.x; rtr.y1 = crd1.y;
+				rtr.x2 = crd2.x; rtr.y2 = crd2.y;
+				return rtr;
+			}
+		}
+	}
+
+	//if no answer is found
+	rtr.x2 = updated.oppThreatZone[0].x;
+	rtr.y2 = updated.oppThreatZone[0].y;
 	return rtr;
 }
