@@ -2,6 +2,7 @@
 #include "consoleAPI.h"
 #include <string.h>
 #include <conio.h>
+#include <string>
 #define BOARD_SIZE 19
 #define STONE_BLACK 1
 #define STONE_WHITE 2
@@ -44,12 +45,14 @@ private:
 	int place_stone(int y, int x, bool show);
 public:
 	int isFree(int y, int x);
+	int get_connectnum();
 	void init();
 	void set_blocking(bool blocking);
 	void play_connect6();
 	void set_blackAI(StoneCOORD(*ai)());
 	void set_whiteAI(StoneCOORD(*ai)());
 	void simulate(StoneCOORD(*aiBlack)(), StoneCOORD(*aiWhite)(), int turns);
+	void show_message(std::string message);
 	int get_numStones();
 	int showBoard(int x, int y);
 	Connect6(bool _isBlackAI, bool _isWhiteAI) {

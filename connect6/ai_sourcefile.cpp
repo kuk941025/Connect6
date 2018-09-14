@@ -6,6 +6,7 @@
 StoneCOORD stone_pos;
 StoneCOORD simple_stone_pos;
 int eval_called;
+int threats_called;
 bool cmpPriority(const coordInfo &a, const coordInfo &b) {
 	return a.priority > b.priority;
 }
@@ -133,6 +134,7 @@ int find_nearestStone(int board[BOARD_SIZE][BOARD_SIZE], int x, int y, int dir_x
 int setThreatZone(int board[BOARD_SIZE][BOARD_SIZE], relevanceZone *zone) {
 	int threat_rows = sizeof(threatZone) / sizeof(threatZone[0]);
 	int threat_cols = sizeof(threatZone[0]) / sizeof(threatZone[0][0]);
+	memset(zone->board, 0, sizeof(zone->board));	
 	bool flag = false;
 	for (int y = 0; y < BOARD_SIZE; y++) {
 		for (int x = 0; x < BOARD_SIZE; x++) {
@@ -361,7 +363,7 @@ int setThreatZone(int board[BOARD_SIZE][BOARD_SIZE], relevanceZone *zone) {
 
 		}
 	}
-
+	threats_called++;
 	if (flag) {
 		for (int i = 0; i < BOARD_SIZE; i++) {
 			for (int j = 0; j < BOARD_SIZE; j++) {
@@ -663,7 +665,7 @@ relevanceZone getRelevanceZone(int gBoard[BOARD_SIZE][BOARD_SIZE]) {
 			}
 		}
 	}
-	setThreatZone(gBoard, &z);
+//	setThreatZone(gBoard, &z);
 	for (int i = 0; i < BOARD_SIZE; i++) {
 		for (int j = 0; j < BOARD_SIZE; j++) {
 			if (z.board[i][j][STONE_BLACK] + z.board[i][j][STONE_WHITE] + z.board[i][j][STONE_BLOCK] > 0) {
@@ -687,24 +689,74 @@ relevanceZone getRelevanceZone(int gBoard[BOARD_SIZE][BOARD_SIZE]) {
 	std::sort(z.oppZone.begin(), z.oppZone.end(), cmpPriority);
 	return z;
 }
+relevanceZone combineRelevanceThreat(relevanceZone threats, relevanceZone relZone) {
+	relevanceZone combined;
+	int relSize = relZone.myZone.size();
+	while (!threats.myThreatZone.empty()) {
+		coordInfo crd = threats.myThreatZone.back(); threats.myThreatZone.pop_back();
+		for (int i = 0; i < relSize; i++) {
+			if (relZone.myZone[i].x == crd.x && relZone.myZone[i].y == crd.y) {
+				relZone.myZone[i].priority += crd.priority;
+			}
+		}
+	}
+	while (!threats.oppThreatZone.empty()) {
+		coordInfo crd = threats.oppThreatZone.back(); threats.oppThreatZone.pop_back();
+		for (int i = 0; i < relSize; i++) {
+			if (relZone.oppZone[i].x == crd.x && relZone.oppZone[i].y == crd.y) {
+				relZone.oppZone[i].priority += crd.priority;
+			}
+		}
+	}
+	while (!threats.myDeadZone.empty()) {
+		coordInfo crd = threats.myDeadZone.back(); threats.myDeadZone.pop_back();
+		for (int i = 0; i < relSize; i++) {
+			if (relZone.myZone[i].x == crd.x && relZone.myZone[i].y == crd.y) {
+				relZone.myZone[i].priority += crd.priority;
+			}
+		}
+	}
 
+	while (!threats.oppDeadZone.empty()) {
+		coordInfo crd = threats.oppDeadZone.back(); threats.oppDeadZone.pop_back();
+		for (int i = 0; i < relSize; i++) {
+			if (relZone.oppZone[i].x == crd.x && relZone.oppZone[i].y == crd.y) {
+				relZone.oppZone[i].priority += crd.priority;
+			}
+		}
+	}
+
+	//to visualize
+	for (int i = 0; i < BOARD_SIZE; i++) {
+		for (int j = 0; j < BOARD_SIZE; j++) {
+			for (int k = 1; k <= 4; k++) {
+				relZone.board[i][j][k] += threats.board[i][j][k];
+			}
+		}
+	}
+	std::sort(relZone.myZone.begin(), relZone.myZone.end(), cmpPriority);
+	std::sort(relZone.oppZone.begin(), relZone.oppZone.end(), cmpPriority);
+	return relZone;
+}
 int evaluate_board(int gameboard[BOARD_SIZE][BOARD_SIZE]) {
 	//higher relevanze zone weights usually represent more optimal solution
+	eval_called++;
 	relevanceZone threats;
 	if (setThreatZone(gameboard, &threats)) { //if there exist threats
-		if (threats.myZone.size() > 0) return 1000;
-		else if (threats.oppZone.size() > 0) return -1000;
+		if (threats.myThreatZone.size() > 0) return 1000 * threats.myThreatZone.size();
+		else if (threats.oppThreatZone.size() > 0) return -1000 * threats.oppThreatZone.size();
 		else return -1; //error
 	}
 	
 	relevanceZone relevants;
 	int evals = 0;
-	relevants = getRelevanceZone(gameboard);
+
+	relevants = combineRelevanceThreat(threats, getRelevanceZone(gameboard));
 	int size = relevants.myZone.size();
 	for (int i = 0; i < size; i++) {
 		evals += (relevants.myZone[i].priority - relevants.oppZone[i].priority);
 	}
-	eval_called++;
+
 	return evals;
 }
 int minimax(int gameboard[BOARD_SIZE][BOARD_SIZE], relevanceZone zone, int depth, int alpha, int beta, bool max) {
@@ -899,10 +951,69 @@ int minimax(int gameboard[BOARD_SIZE][BOARD_SIZE], relevanceZone zone, int depth
 	return 1;
 }
 
-int longest_connect(int gameboard[BOARD_SIZE][BOARD_SIZE], int last_x, int last_y) {
+int check_connect6(int gameboard[BOARD_SIZE][BOARD_SIZE], int last_x, int last_y) {
+	int y, x, cnt;
+	int connect_num = c.get_connectnum();
+	int stone_type = 1;
+	y = last_y; x = last_x;
+
+	//horizontal check
+	cnt = 0;
+	while ((gameboard[y][x - 1] == stone_type || gameboard[y][x - 1] == STONE_BLOCK) && x - 1 >= 0)
+		x--;
+	while ((gameboard[y][x] == stone_type || gameboard[y][x] == STONE_BLOCK) && x < BOARD_SIZE) {
+		cnt++;
+		x++;
+	}
+
+	if (cnt == connect_num)
+		return 1;
+
+	//vertical check
+	cnt = 0;
+	y = last_y; x = last_x;
+	while ((gameboard[y - 1][x] == stone_type || gameboard[y - 1][x] == STONE_BLOCK) && y - 1 >= 0)
+		y--;
+	while ((gameboard[y][x] == stone_type || gameboard[y][x] == STONE_BLOCK) && y < BOARD_SIZE) {
+		cnt++;
+		y++;
+	}
+
+	if (cnt == connect_num)
+		return 1;
+
+	//diagonal bottom right
+	cnt = 0;
+	y = last_y; x = last_x;
+	while ((gameboard[y - 1][x - 1] == stone_type || gameboard[y - 1][x - 1] == STONE_BLOCK) && x - 1 >= 0 && y - 1 >= 0) {
+		y--;
+		x--;
+	}
+	while ((gameboard[y][x] == stone_type || gameboard[y][x] == STONE_BLOCK) && x < BOARD_SIZE && y < BOARD_SIZE) {
+		cnt++;
+		y++; x++;
+	}
+
+	if (cnt == connect_num)
+		return 1;
+
+	//diagonal bottom left
+	cnt = 0;
+	y = last_y; x = last_x;
+	while ((gameboard[y - 1][x + 1] == stone_type || gameboard[y - 1][x + 1] == STONE_BLOCK) && x + 1 >= 0 && y - 1 >= 0) {
+		y--;
+		x++;
+	}
+	while ((gameboard[y][x] == stone_type || gameboard[y][x] == STONE_BLOCK) && x < BOARD_SIZE && y < BOARD_SIZE) {
+		cnt++;
+		y++; x--;
+	}
+
+	if (cnt == connect_num)
+		return 1;
+
 	return 0;
 }
-
 
 StoneCOORD random_ai() {
 	int y, x;
@@ -923,7 +1034,6 @@ StoneCOORD random_ai() {
 	}
 	return rtr;
 }
-
 StoneCOORD random_ai_highest_relevant() {
 	int gameboard[BOARD_SIZE][BOARD_SIZE];
 	for (int i = 0; i < BOARD_SIZE; i++)
@@ -1046,12 +1156,26 @@ int simple_minimax(int gameboard[BOARD_SIZE][BOARD_SIZE], relevanceZone zone,  i
 			for (int j = i + 1; j < zone_size; j++) {
 				coordInfo first_info = zone.myZone[i];
 				coordInfo second_info = zone.myZone[j];
-				if (j > 4) break;
+				if (j > i + 3) break;
 				if (first_info.priority <= 0) continue;
 				if (second_info.priority <=  0) continue;
 								
 				gameboard[first_info.y][first_info.x] = 1;
 				gameboard[second_info.y][second_info.x] = 1;
+
+				if (check_connect6(gameboard, first_info.x, first_info.y) || check_connect6(gameboard, second_info.x, second_info.y)) {
+					if (depth == 4) {
+						simple_stone_pos.x1 = first_info.x;
+						simple_stone_pos.y1 = first_info.y;
+						simple_stone_pos.x2 = second_info.x;
+						simple_stone_pos.y2 = second_info.y;
+						return 0;
+					}
+					gameboard[first_info.y][first_info.x] = 0;
+					gameboard[second_info.y][second_info.x] = 0;
+					return 10000;
+				}
+
 				zone.myZone[i].priority = zone.myZone[j].priority = 0;
 
 				int eval = simple_minimax(gameboard, zone, depth - 1, alpha, beta, false);
@@ -1073,9 +1197,6 @@ int simple_minimax(int gameboard[BOARD_SIZE][BOARD_SIZE], relevanceZone zone,  i
 				}
 				if (beta <= alpha) break;
 
-				
-
-
 			}
 			
 		}
@@ -1090,12 +1211,17 @@ int simple_minimax(int gameboard[BOARD_SIZE][BOARD_SIZE], relevanceZone zone,  i
 				coordInfo first_info = zone.oppZone[i];
 				coordInfo second_info = zone.oppZone[j];
 
-				if (j > 3) break;
+				if (j > i +3) break;
 				if (first_info.priority <= 0) continue;
 				if (second_info.priority <= 0) continue;
 
-				gameboard[first_info.y][first_info.x] = 1;
-				gameboard[second_info.y][second_info.x] = 1;
+				gameboard[first_info.y][first_info.x] = 2;
+				gameboard[second_info.y][second_info.x] = 2;
+				if (check_connect6(gameboard, first_info.x, first_info.y) || check_connect6(gameboard, second_info.x, second_info.y)) {
+					gameboard[first_info.y][first_info.x] = gameboard[second_info.y][second_info.x] = 0;
+					return -10000;
+				}
+
 				zone.oppZone[i].priority = zone.oppZone[j].priority = 0;
 
 				int eval = simple_minimax(gameboard, zone, depth - 1, alpha, beta, true);
@@ -1116,6 +1242,7 @@ StoneCOORD dumb_minimax() {
 	int gameboard[BOARD_SIZE][BOARD_SIZE];
 	int initStone, initOpps;
 	eval_called = 0;
+	threats_called = 0;
 	initStone = initOpps = 0;
 	for (int i = 0; i < BOARD_SIZE; i++) {
 		for (int j = 0; j < BOARD_SIZE; j++) {
@@ -1146,6 +1273,7 @@ StoneCOORD dumb_minimax() {
 	}
 	else {
 		relevanceZone zone = getRelevanceZone(gameboard);
+
 		simple_minimax(gameboard, zone ,4, -INF, INF, true);
 		rtr.x1 = simple_stone_pos.x1;
 		rtr.y1 = simple_stone_pos.y1;

@@ -25,11 +25,13 @@ struct relevanceZone {
 	vector<coordInfo> myDeadZone, oppDeadZone, myThreatZone, oppThreatZone;
 	int board[BOARD_SIZE][BOARD_SIZE][4];
 };
+relevanceZone combineRelevanceThreat(relevanceZone threats, relevanceZone relZone);
 StoneCOORD dumb_minimax();
 StoneCOORD random_ai();
 StoneCOORD random_ai_relevantzone();
 StoneCOORD random_ai_highest_relevant();
 int setThreatZone(int board[BOARD_SIZE][BOARD_SIZE], relevanceZone *zone);
+int check_connect6(int gameboard[BOARD_SIZE][BOARD_SIZE], int last_x, int last_y);
 int minimax (int gBoard[BOARD_SIZE][BOARD_SIZE] , relevanceZone zone, int depth, int alpha, int beta, bool max);
 relevanceZone getRelevanceZone(int gBoard[BOARD_SIZE][BOARD_SIZE]);
 StoneCOORD mansoon();

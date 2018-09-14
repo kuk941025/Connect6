@@ -3,7 +3,6 @@
 #include <iostream>
 #include <stdlib.h>
 #include <time.h>
-
 using namespace std;
 
 
@@ -69,6 +68,10 @@ int Connect6::check_connect6(int last_y, int last_x) {
 
 	return 0;
 }
+int Connect6::get_connectnum()
+{
+	return connect_num;
+}
 
 int Connect6::get_numStones() {
 	return numStones;
@@ -84,13 +87,18 @@ int Connect6::showBoard(int x, int y) {
 	}
 }
 void Connect6::notify_stone() {
-	clear_message();
-	MoveCursor(message_crd.X, message_crd.Y);
-	cout << "Enter coordinate for stone ";
-	if (stone_type == STONE_BLACK) cout << "BLACK: ";
-	else cout << "WHITE: ";
+	string message = "Enter coordinate for stone ";
+	if (stone_type == STONE_BLACK) message = message + "BLACK: ";
+	else message = message + "WHITE: ";
+	show_message(message);
 
 }
+void Connect6::show_message(string message) {
+	clear_message();
+	MoveCursor(message_crd.X, message_crd.Y);
+	cout << message;
+}
+
 
 void Connect6::init() {
 	this->connect_num = CONNECT_NUMBER;
@@ -157,6 +165,9 @@ COORD Connect6::get_userinput() {
 			else if (key == KEY_I) {
 				COORD cur_pos = getCursor();
 				relevanceZone re = getRelevanceZone(gBoard);
+				relevanceZone threats;
+				setThreatZone(gBoard, &threats);
+				re = combineRelevanceThreat(threats, re);
 				clear_message();
 				for (int i = 0; i < BOARD_SIZE; i++) {
 					for (int j = 0; j < BOARD_SIZE; j++) {
